@@ -1,2 +1,2 @@
-gcc main.c rsa.c rsa.h aes.c aes.h -o program
+gcc main.c lib/rsa.c lib/rsa.h lib/aes.c lib/aes.h -o program
 #./program

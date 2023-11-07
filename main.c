@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <dirent.h>
 #include <time.h>
-#include "aes.h"
+#include "lib/aes.h"
 
 typedef struct {
     char **paths;
