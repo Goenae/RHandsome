@@ -48,7 +48,7 @@ void decryptFile(struct AES_ctx ctx, char file_path[256]){
     end_fp = fopen(end_fpth, "ab");
 
     //Chunk creation
-    const size_t buffer_size = 65535;
+    const size_t buffer_size = 4096;
     unsigned char buffer[buffer_size];
 
     //Read file's bytes chunk by chunk until the end
@@ -95,7 +95,7 @@ void encryptFile(struct AES_ctx ctx, char file_path[256]){
     end_fp = fopen(end_fpth, "ab");
 
     //Chunk creation
-    const size_t buffer_size = 65535;
+    const size_t buffer_size = 4096;
     unsigned char buffer[buffer_size];
 
     //Read file's bytes chunk by chunk until the end
@@ -103,6 +103,7 @@ void encryptFile(struct AES_ctx ctx, char file_path[256]){
     while((bytes_read = fread(buffer, 1, buffer_size, src_fp)) > 0){
         //Encrypt current chunk
         AES_CBC_encrypt_buffer(&ctx, buffer, sizeof(buffer));
+        //AES_CBC_decrypt_buffer(&ctx, buffer, sizeof(buffer));
         //Write current encrypted chunk in the new file
         fwrite(buffer, 1, bytes_read, end_fp);
 

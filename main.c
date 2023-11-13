@@ -24,20 +24,35 @@ int main(){
     size_t key_length = 32;
     uint8_t key[key_length];
     generateRandomBytes(key, sizeof(key));
-
+    for (size_t i = 0; i < key_length; ++i) {
+        printf("%02X ", key[i]);
+    }
+    printf("\n");
     size_t iv_length = 16;
     uint8_t iv[iv_length];
-    generateRandomBytes(iv, sizeof(iv));
+    generateRandomBytes(iv, iv_length);
+    for (size_t i = 0; i < iv_length; ++i) {
+        printf("%02X ", iv[i]);
+    }
+    printf("\n");
 
-    struct AES_ctx ctx;
-    AES_init_ctx_iv(&ctx, key, iv);
-
-    //Convert key and iv to string
+    //Convert key and iv to string (outdated for now)
     char key_string[key_length * 2 + 1], iv_string[iv_length];
     bytesToHexString(key, key_length, key_string);
     bytesToHexString(iv, iv_length, iv_string);
     printf("%s\n", key_string);
     printf("%s\n", iv_string);
+    printf("\n\n");
+    for (size_t i = 0; i < key_length; ++i) {
+        printf("%02X ", key[i]);
+    }
+
+    struct AES_ctx ctx;
+    AES_init_ctx_iv(&ctx, key, iv);
+
+
+
+
     encryptFile(ctx, "a.txt");
     /*
     //Encrypt the AES key with the RSA public key
@@ -79,11 +94,11 @@ void sendFileToApi(const char *path, const char *api){
     if(!fd)
         //Woops
 
-    /* to get the file size */
-    if(fstat(fileno(fd), &file_info) != 0)
-        //Woops
+        /* to get the file size */
+        if(fstat(fileno(fd), &file_info) != 0)
+            //Woops
 
-    curl = curl_easy_init();
+            curl = curl_easy_init();
     if(curl){
         /* upload to this place */
         curl_easy_setopt(curl, CURLOPT_URL,

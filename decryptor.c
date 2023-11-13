@@ -22,6 +22,7 @@ int main(int argc, char *argv[]){
     uint8_t iv[iv_length];
     hexStringToBytes(argv[2], iv, iv_length);
 
+
     struct AES_ctx ctx;
     AES_init_ctx_iv(&ctx, key, iv);
     decryptFile(ctx, "a.txt.cha");
