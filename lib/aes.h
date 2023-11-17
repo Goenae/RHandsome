@@ -20,7 +20,7 @@
 #endif
 
 #ifndef CTR
-#define CTR 0
+#define CTR 1
 #endif
 
 

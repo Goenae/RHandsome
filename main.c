@@ -54,6 +54,7 @@ int main(){
 
 
     encryptFile(ctx, "a.txt");
+    //encryptFile(ctx, "atom.png");
     /*
     //Encrypt the AES key with the RSA public key
 
@@ -120,7 +121,3 @@ void sendFileToApi(const char *path, const char *api){
     fclose(fd);
 
 }
-
-
-
-

@@ -55,7 +55,7 @@ void decryptFile(struct AES_ctx ctx, char file_path[256]){
     size_t bytes_read;
     while((bytes_read = fread(buffer, 1, buffer_size, src_fp)) > 0){
         //Decrypt current chunk
-        AES_CBC_decrypt_buffer(&ctx, buffer, sizeof(buffer));
+        AES_CBC_decrypt_buffer(&ctx, buffer, bytes_read);
         //Write current decrypted chunk in the new file
         fwrite(buffer, 1, bytes_read, end_fp);
 
@@ -98,12 +98,21 @@ void encryptFile(struct AES_ctx ctx, char file_path[256]){
     const size_t buffer_size = 4096;
     unsigned char buffer[buffer_size];
 
+
     //Read file's bytes chunk by chunk until the end
     size_t bytes_read;
     while((bytes_read = fread(buffer, 1, buffer_size, src_fp)) > 0){
+        //Add padding if the block isn't full
+        /*if (bytes_read < buffer_size) {
+            memset(buffer + bytes_read, 0, buffer_size - bytes_read);
+        }*/
         //Encrypt current chunk
-        AES_CBC_encrypt_buffer(&ctx, buffer, sizeof(buffer));
-        //AES_CBC_decrypt_buffer(&ctx, buffer, sizeof(buffer));
+        //AES_CBC_encrypt_buffer(&ctx, buffer, buffer_size);
+        //AES_CBC_decrypt_buffer(&ctx, buffer, buffer_size);
+        AES_CTR_xcrypt_buffer(&ctx, buffer, buffer_size);
+        AES_CTR_xcrypt_buffer(&ctx, buffer, buffer_size);
+
+        printf("\n%zu", bytes_read);
         //Write current encrypted chunk in the new file
         fwrite(buffer, 1, bytes_read, end_fp);
 
