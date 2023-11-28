@@ -20,13 +20,13 @@ void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad
     long fileSize;
 
     // Open the input file in binary mode for reading
-    if ((inputFile = fopen("a.txt", "rb")) == NULL) {
+    if ((inputFile = fopen("atom.png", "rb")) == NULL) {
         perror("Error opening input file");
         exit(1);
     }
 
     // Open the output file in binary mode for writing
-    if ((outputFile = fopen("b.txt", "wb")) == NULL) {
+    if ((outputFile = fopen("atom2.png", "wb")) == NULL) {
         perror("Error opening output file");
         fclose(inputFile);
         exit(1);
@@ -55,19 +55,28 @@ void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad
         exit(1);
     }
 
+    // Print the content of plaintext
+    /*printf("Content of plaintext:\n");
+    for (int i = 0; i < fileSize; i++) {
+        printf("%c", plaintext[i]);
+    }
+    printf("\n");*/
+
+
     int buffer_size = fileSize + strlen(aad);
     unsigned char *ciphertext = malloc(buffer_size);
     unsigned char *decryptedtext = malloc(buffer_size);
     int decryptedtext_len = 0, ciphertext_len = 0;
 
-    ciphertext_len = encrypt(plaintext, strlen(plaintext), aad, strlen(aad), key, iv, ciphertext, tag);
+    ciphertext_len = encrypt(plaintext, fileSize, aad, strlen(aad), key, iv, ciphertext, tag);
     decryptedtext_len = decrypt(ciphertext, ciphertext_len, aad, strlen(aad), tag, key, iv, decryptedtext);
-    /*printf("%s\n", plaintext);
-    printf("%s\n", decryptedtext);
-    printf("%lu\n", strlen(plaintext));
-    printf("%lu\n", strlen(decryptedtext));
-    printf("%d\n", decryptedtext_len);
-    printf("%ld\n", fileSize);*/
+    //printf("%s\n", plaintext);
+    //printf("%s\n", decryptedtext);
+    //printf("%lu\n", strlen(plaintext));
+    //printf("%lu\n", strlen(decryptedtext));
+    //printf("%d\n", decryptedtext_len);
+    //printf("%ld\n", fileSize);
+    //printf("%d\n", buffer_size);
 
     // Write the entire content from the buffer to the output file
     if (fwrite(decryptedtext, 1, fileSize, outputFile) != fileSize) {
