@@ -12,7 +12,8 @@ int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *aad,
             unsigned char *plaintext);
 
 
-void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad[]){
+
+void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad[], char file_path[]){
     unsigned char tag[16];
 
     FILE *inputFile, *outputFile;
@@ -20,13 +21,25 @@ void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad
     long fileSize;
 
     // Open the input file in binary mode for reading
-    if ((inputFile = fopen("atom.png", "rb")) == NULL) {
+    if ((inputFile = fopen(file_path, "rb")) == NULL) {
         perror("Error opening input file");
         exit(1);
     }
 
+    //Parse file's path
+    char *file_name = strrchr(file_path, '/');
+    if (file_name == NULL) {
+        file_name = file_path;
+    } else {
+        file_name++;
+    }
+
+    //Create new (encrypted) file
+    char end_fpth[strlen(file_path+4)];
+    sprintf(end_fpth, "%s.cha", file_name);
+
     // Open the output file in binary mode for writing
-    if ((outputFile = fopen("atom2.png", "wb")) == NULL) {
+    if ((outputFile = fopen(end_fpth, "wb")) == NULL) {
         perror("Error opening output file");
         fclose(inputFile);
         exit(1);
@@ -54,13 +67,6 @@ void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad
         fclose(outputFile);
         exit(1);
     }
-
-    // Print the content of plaintext
-    /*printf("Content of plaintext:\n");
-    for (int i = 0; i < fileSize; i++) {
-        printf("%c", plaintext[i]);
-    }
-    printf("\n");*/
 
 
     int buffer_size = fileSize + strlen(aad);
@@ -106,54 +112,21 @@ int main()
 
     /* Set up the key and iv. Do I need to say to not hard code these in a real application? :-) */
 
-    /* A 256 bit key */
+    // A 256 bit key
     unsigned char key[32];
     RAND_bytes(key, sizeof(key));
 
-    /* A 128 bit IV */
+    // A 128 bit IV
     unsigned char iv[16];
     RAND_bytes(iv, sizeof(iv));
 
     unsigned char plaintext[] = "I'm losing it";
 
-    /* Some additional data to be authenticated */
+    // Authentication string
     static const unsigned char aad[] = "Cyan";
 
-    /*
-    int buffer_size = sizeof(plaintext) + sizeof(aad);
-    unsigned char ciphertext[buffer_size];
 
-    // Buffer for the decrypted text
-    unsigned char decryptedtext[buffer_size];
-
-    // Buffer for the tag
-    unsigned char tag[16];
-
-    int decryptedtext_len = 0, ciphertext_len = 0;
-
-    // Encrypt the plaintext
-    ciphertext_len = encrypt(plaintext, strlen(plaintext), aad, strlen(aad), key, iv, ciphertext, tag);
-
-
-    printf("Ciphertext is:\n");
-    BIO_dump_fp(stdout, ciphertext, ciphertext_len);
-    printf("Tag is:\n");
-    BIO_dump_fp(stdout, tag, 14);
-
-    // Decrypt the ciphertext
-    decryptedtext_len = decrypt(ciphertext, ciphertext_len, aad, strlen(aad), tag, key, iv, decryptedtext);
-
-    // Add a NULL terminator. We are expecting printable text
-    decryptedtext[decryptedtext_len] = '\0';
-
-    // Show the decrypted text
-    printf("Decrypted text is:\n");
-    printf("%s\n", decryptedtext);
-
-    // Remove error strings
-    ERR_free_strings();
-    */
-    encrypt_file(key, iv, aad);
+    encrypt_file(key, iv, aad, "atom.png");
 
     return 0;
 }
