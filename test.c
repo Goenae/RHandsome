@@ -11,7 +11,7 @@ int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *aad,
             int aad_len, unsigned char *tag, unsigned char *key, unsigned char *iv,
             unsigned char *plaintext);
 
-#define BUFFER_SIZE 4096
+
 void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad[]){
     unsigned char tag[16];
 
@@ -22,14 +22,14 @@ void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad
     // Open the input file in binary mode for reading
     if ((inputFile = fopen("a.txt", "rb")) == NULL) {
         perror("Error opening input file");
-        return 1;
+        exit(1);
     }
 
     // Open the output file in binary mode for writing
     if ((outputFile = fopen("b.txt", "wb")) == NULL) {
         perror("Error opening output file");
         fclose(inputFile);
-        return 1;
+        exit(1);
     }
 
     // Find the size of the input file
@@ -43,7 +43,7 @@ void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad
         perror("Error allocating memory");
         fclose(inputFile);
         fclose(outputFile);
-        return 1;
+        exit(1);
     }
 
     // Read the entire content into the buffer
@@ -52,36 +52,45 @@ void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad
         free(plaintext);
         fclose(inputFile);
         fclose(outputFile);
-        return 1;
+        exit(1);
     }
 
-    int buffer_size = sizeof(plaintext) + sizeof(aad);
-    unsigned char ciphertext[buffer_size];
-    unsigned char decryptedtext[buffer_size];
+    int buffer_size = fileSize + strlen(aad);
+    unsigned char *ciphertext = malloc(buffer_size);
+    unsigned char *decryptedtext = malloc(buffer_size);
     int decryptedtext_len = 0, ciphertext_len = 0;
 
-    printf("%s\n", plaintext);
     ciphertext_len = encrypt(plaintext, strlen(plaintext), aad, strlen(aad), key, iv, ciphertext, tag);
-
     decryptedtext_len = decrypt(ciphertext, ciphertext_len, aad, strlen(aad), tag, key, iv, decryptedtext);
-
+    /*printf("%s\n", plaintext);
+    printf("%s\n", decryptedtext);
+    printf("%lu\n", strlen(plaintext));
+    printf("%lu\n", strlen(decryptedtext));
+    printf("%d\n", decryptedtext_len);
+    printf("%ld\n", fileSize);*/
 
     // Write the entire content from the buffer to the output file
-    if (fwrite(plaintext, 1, fileSize, outputFile) != fileSize) {
+    if (fwrite(decryptedtext, 1, fileSize, outputFile) != fileSize) {
         perror("Error writing file");
         free(plaintext);
         fclose(inputFile);
         fclose(outputFile);
-        return 1;
+
+        free(ciphertext);
+        free(decryptedtext);
+        exit(1);
     }
 
     // Close the files and free the buffer
     fclose(inputFile);
     fclose(outputFile);
+
+    free(ciphertext);
+    free(decryptedtext);
     free(plaintext);
 }
 
-int main(int arc, char *argv[])
+int main()
 {
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();
@@ -101,19 +110,19 @@ int main(int arc, char *argv[])
     /* Some additional data to be authenticated */
     static const unsigned char aad[] = "Cyan";
 
-
+    /*
     int buffer_size = sizeof(plaintext) + sizeof(aad);
     unsigned char ciphertext[buffer_size];
 
-    /* Buffer for the decrypted text */
+    // Buffer for the decrypted text
     unsigned char decryptedtext[buffer_size];
 
-    /* Buffer for the tag */
+    // Buffer for the tag
     unsigned char tag[16];
 
     int decryptedtext_len = 0, ciphertext_len = 0;
 
-    /* Encrypt the plaintext */
+    // Encrypt the plaintext
     ciphertext_len = encrypt(plaintext, strlen(plaintext), aad, strlen(aad), key, iv, ciphertext, tag);
 
 
@@ -122,7 +131,7 @@ int main(int arc, char *argv[])
     printf("Tag is:\n");
     BIO_dump_fp(stdout, tag, 14);
 
-    /* Decrypt the ciphertext */
+    // Decrypt the ciphertext
     decryptedtext_len = decrypt(ciphertext, ciphertext_len, aad, strlen(aad), tag, key, iv, decryptedtext);
 
     // Add a NULL terminator. We are expecting printable text
@@ -132,9 +141,9 @@ int main(int arc, char *argv[])
     printf("Decrypted text is:\n");
     printf("%s\n", decryptedtext);
 
-    /* Remove error strings */
+    // Remove error strings
     ERR_free_strings();
-
+    */
     encrypt_file(key, iv, aad);
 
     return 0;
