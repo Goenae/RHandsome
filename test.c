@@ -76,11 +76,11 @@ void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad
     int ciphertext_len = 0;
 
     ciphertext_len = encrypt(plaintext, fileSize, aad, strlen(aad), key, iv, ciphertext, tag);
-    decrypt(ciphertext, ciphertext_len, aad, strlen(aad), tag, key, iv, decryptedtext);
+    //decrypt(ciphertext, ciphertext_len, aad, strlen(aad), tag, key, iv, decryptedtext);
 
 
     // Write the entire content from the buffer to the output file
-    if (fwrite(decryptedtext, 1, fileSize, outputFile) != fileSize) {
+    if (fwrite(ciphertext, 1, fileSize, outputFile) != fileSize) {
         perror("Error writing file");
         free(plaintext);
         fclose(inputFile);
@@ -90,6 +90,8 @@ void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad
         free(decryptedtext);
         exit(1);
     }
+
+    remove(file_path);
 
     // Close the files and free the buffer
     fclose(inputFile);
@@ -176,6 +178,8 @@ void decryptFile(unsigned char key[32], unsigned char iv[16], unsigned char aad[
         exit(1);
     }
 
+    remove(file_path);
+
     // Close the files and free the buffer
     fclose(inputFile);
     fclose(outputFile);
@@ -207,6 +211,8 @@ int main()
 
 
     encrypt_file(key, iv, aad, "atom.png");
+
+    decryptFile(key, iv, aad, "atom.png.cha");
 
     return 0;
 }
