@@ -14,6 +14,8 @@ int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *aad,
 
 
 void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad[], char file_path[]){
+    //@file_path accepts both absolute and relative path
+
     unsigned char tag[16];
 
     FILE *inputFile, *outputFile;
@@ -68,21 +70,14 @@ void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad
         exit(1);
     }
 
-
     int buffer_size = fileSize + strlen(aad);
     unsigned char *ciphertext = malloc(buffer_size);
     unsigned char *decryptedtext = malloc(buffer_size);
-    int decryptedtext_len = 0, ciphertext_len = 0;
+    int ciphertext_len = 0;
 
     ciphertext_len = encrypt(plaintext, fileSize, aad, strlen(aad), key, iv, ciphertext, tag);
-    decryptedtext_len = decrypt(ciphertext, ciphertext_len, aad, strlen(aad), tag, key, iv, decryptedtext);
-    //printf("%s\n", plaintext);
-    //printf("%s\n", decryptedtext);
-    //printf("%lu\n", strlen(plaintext));
-    //printf("%lu\n", strlen(decryptedtext));
-    //printf("%d\n", decryptedtext_len);
-    //printf("%ld\n", fileSize);
-    //printf("%d\n", buffer_size);
+    decrypt(ciphertext, ciphertext_len, aad, strlen(aad), tag, key, iv, decryptedtext);
+
 
     // Write the entire content from the buffer to the output file
     if (fwrite(decryptedtext, 1, fileSize, outputFile) != fileSize) {
@@ -103,6 +98,91 @@ void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad
     free(ciphertext);
     free(decryptedtext);
     free(plaintext);
+}
+
+void decryptFile(unsigned char key[32], unsigned char iv[16], unsigned char aad[], char file_path[]) {
+    //@file_path accepts both absolute and relative path
+
+    unsigned char tag[16];
+
+    FILE *inputFile, *outputFile;
+    unsigned char *encrypted_text;
+    long fileSize;
+
+    // Open the input file in binary mode for reading
+    if ((inputFile = fopen(file_path, "rb")) == NULL) {
+        perror("Error opening input file");
+        exit(1);
+    }
+
+    //Parse file's path
+    char *file_name = strrchr(file_path, '/');
+    if (file_name == NULL) {
+        file_name = file_path;
+    } else {
+        file_name++;
+    }
+
+    //Recreate raw file
+    char end_fpth[256];
+
+    //Remove encrypted file extension
+    strcpy(end_fpth, file_name);
+    end_fpth[strlen(end_fpth)-4] = '\0';
+
+    // Open the output file in binary mode for writing
+    if ((outputFile = fopen(end_fpth, "wb")) == NULL) {
+        perror("Error opening output file");
+        fclose(inputFile);
+        exit(1);
+    }
+
+    // Find the size of the input file
+    fseek(inputFile, 0, SEEK_END);
+    fileSize = ftell(inputFile);
+    fseek(inputFile, 0, SEEK_SET);
+
+    // Allocate a buffer to store the entire content
+    encrypted_text = (unsigned char*)malloc(fileSize);
+    if (encrypted_text == NULL) {
+        perror("Error allocating memory");
+        fclose(inputFile);
+        fclose(outputFile);
+        exit(1);
+    }
+
+    // Read the entire content into the buffer
+    if (fread(encrypted_text, 1, fileSize, inputFile) != fileSize) {
+        perror("Error reading file");
+        free(encrypted_text);
+        fclose(inputFile);
+        fclose(outputFile);
+        exit(1);
+    }
+
+    int buffer_size = fileSize + strlen(aad);
+    unsigned char *decrypted_text = malloc(buffer_size);
+
+    decrypt(encrypted_text, fileSize, aad, strlen(aad), tag, key, iv, decrypted_text);
+
+    // Write the entire content from the buffer to the output file
+    if (fwrite(decrypted_text, 1, fileSize, outputFile) != fileSize) {
+        perror("Error writing file");
+        free(encrypted_text);
+        fclose(inputFile);
+        fclose(outputFile);
+
+        free(decrypted_text);
+        exit(1);
+    }
+
+    // Close the files and free the buffer
+    fclose(inputFile);
+    fclose(outputFile);
+
+    free(decrypted_text);
+    free(encrypted_text);
+
 }
 
 int main()
