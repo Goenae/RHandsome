@@ -12,9 +12,10 @@ void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad
 
     FILE *inputFile, *outputFile;
     unsigned char *plaintext;
-    long fileSize;
+    int chunk_size = 500 * 1024 * 1024;  // 500MB
+    size_t bytesRead;
 
-    // Open the input file in binary mode for reading
+    //Open the input file in binary mode for reading
     if ((inputFile = fopen(file_path, "rb")) == NULL) {
         perror("Error opening input file");
         exit(1);
@@ -25,20 +26,15 @@ void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad
     char end_fpth[strlen(file_path+4)];
     sprintf(end_fpth, "%s.cha", file_path);
 
-    // Open the output file in binary mode for writing
+    //Open the output file in binary mode for writing
     if ((outputFile = fopen(end_fpth, "wb")) == NULL) {
         perror("Error opening output file");
         fclose(inputFile);
         exit(1);
     }
 
-    // Find the size of the input file
-    fseek(inputFile, 0, SEEK_END);
-    fileSize = ftell(inputFile);
-    fseek(inputFile, 0, SEEK_SET);
-
-    // Allocate a buffer to store the entire content
-    plaintext = (unsigned char*)malloc(fileSize);
+    // Allocate a buffer to store the chunk of content
+    plaintext = (unsigned char*)malloc(chunk_size);
     if (plaintext == NULL) {
         perror("Error allocating memory");
         fclose(inputFile);
@@ -46,40 +42,30 @@ void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad
         exit(1);
     }
 
-    // Read the entire content into the buffer
-    if (fread(plaintext, 1, fileSize, inputFile) != fileSize) {
-        perror("Error reading file");
-        free(plaintext);
-        fclose(inputFile);
-        fclose(outputFile);
-        exit(1);
-    }
 
-    int buffer_size = fileSize + strlen(aad);
-    unsigned char *ciphertext = malloc(buffer_size);
+    while ((bytesRead = fread(plaintext, 1, chunk_size, inputFile)) > 0) {
+        int buffer_size = bytesRead + strlen(aad);
+        unsigned char *ciphertext = malloc(buffer_size);
+        int ciphertext_len = encrypt(plaintext, bytesRead, aad, strlen(aad), key, iv, ciphertext, tag);
 
-    encrypt(plaintext, fileSize, aad, strlen(aad), key, iv, ciphertext, tag);
-
-
-    // Write the entire content from the buffer to the output file
-    if (fwrite(ciphertext, 1, fileSize, outputFile) != fileSize) {
-        perror("Error writing file");
-        free(plaintext);
-        fclose(inputFile);
-        fclose(outputFile);
-
+        // Write the encrypted chunk to the output file
+        if (fwrite(ciphertext, 1, ciphertext_len, outputFile) != ciphertext_len) {
+            perror("Error writing file");
+            free(plaintext);
+            free(ciphertext);
+            fclose(inputFile);
+            fclose(outputFile);
+            exit(1);
+        }
         free(ciphertext);
-        exit(1);
     }
 
     // Remove the base file
-    remove(file_path);
+    //remove(file_path);
 
-    // Close the files and free the buffer
+    /// Clean up and close the files
     fclose(inputFile);
     fclose(outputFile);
-
-    free(ciphertext);
     free(plaintext);
 }
 
@@ -90,7 +76,8 @@ void decryptFile(unsigned char key[32], unsigned char iv[16], unsigned char aad[
 
     FILE *inputFile, *outputFile;
     unsigned char *encrypted_text;
-    long fileSize;
+    int chunk_size = 500 * 1024 * 1024;  // 500MB
+    size_t bytesRead;
 
     // Open the input file in binary mode for reading
     if ((inputFile = fopen(file_path, "rb")) == NULL) {
@@ -113,13 +100,8 @@ void decryptFile(unsigned char key[32], unsigned char iv[16], unsigned char aad[
         exit(1);
     }
 
-    // Find the size of the input file
-    fseek(inputFile, 0, SEEK_END);
-    fileSize = ftell(inputFile);
-    fseek(inputFile, 0, SEEK_SET);
-
     // Allocate a buffer to store the entire content
-    encrypted_text = (unsigned char*)malloc(fileSize);
+    encrypted_text = (unsigned char*)malloc(chunk_size);
     if (encrypted_text == NULL) {
         perror("Error allocating memory");
         fclose(inputFile);
@@ -127,29 +109,23 @@ void decryptFile(unsigned char key[32], unsigned char iv[16], unsigned char aad[
         exit(1);
     }
 
-    // Read the entire content into the buffer
-    if (fread(encrypted_text, 1, fileSize, inputFile) != fileSize) {
-        perror("Error reading file");
-        free(encrypted_text);
-        fclose(inputFile);
-        fclose(outputFile);
-        exit(1);
-    }
+    while ((bytesRead = fread(encrypted_text, 1, chunk_size, inputFile)) > 0) {
+        printf("%zu\n", bytesRead);
+        int buffer_size = bytesRead + strlen(aad);
+        unsigned char *decrypted_text = malloc(buffer_size);
+        int decryptedtext_len = decrypt(encrypted_text, bytesRead, aad, strlen(aad), tag, key, iv, decrypted_text);
 
-    int buffer_size = fileSize + strlen(aad);
-    unsigned char *decrypted_text = malloc(buffer_size);
-
-    decrypt(encrypted_text, fileSize, aad, strlen(aad), tag, key, iv, decrypted_text);
-
-    // Write the entire content from the buffer to the output file
-    if (fwrite(decrypted_text, 1, fileSize, outputFile) != fileSize) {
-        perror("Error writing file");
-        free(encrypted_text);
-        fclose(inputFile);
-        fclose(outputFile);
-
+        // Write the encrypted chunk to the output file
+        if (fwrite(decrypted_text, 1, decryptedtext_len, outputFile) != decryptedtext_len) {
+            printf("%d\n", decryptedtext_len);
+            perror("Error writing file");
+            free(encrypted_text);
+            free(decrypted_text);
+            fclose(inputFile);
+            fclose(outputFile);
+            exit(1);
+        }
         free(decrypted_text);
-        exit(1);
     }
 
     // Remove the encrypted file
@@ -159,7 +135,6 @@ void decryptFile(unsigned char key[32], unsigned char iv[16], unsigned char aad[
     fclose(inputFile);
     fclose(outputFile);
 
-    free(decrypted_text);
     free(encrypted_text);
 
 }
