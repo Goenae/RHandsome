@@ -20,17 +20,10 @@ void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad
         exit(1);
     }
 
-    //Parse file's path
-    char *file_name = strrchr(file_path, '/');
-    if (file_name == NULL) {
-        file_name = file_path;
-    } else {
-        file_name++;
-    }
 
     //Create new (encrypted) file
     char end_fpth[strlen(file_path+4)];
-    sprintf(end_fpth, "%s.cha", file_name);
+    sprintf(end_fpth, "%s.cha", file_path);
 
     // Open the output file in binary mode for writing
     if ((outputFile = fopen(end_fpth, "wb")) == NULL) {
@@ -105,19 +98,12 @@ void decryptFile(unsigned char key[32], unsigned char iv[16], unsigned char aad[
         exit(1);
     }
 
-    //Parse file's path
-    char *file_name = strrchr(file_path, '/');
-    if (file_name == NULL) {
-        file_name = file_path;
-    } else {
-        file_name++;
-    }
 
     //Recreate raw file
     char end_fpth[256];
 
     //Remove encrypted file extension
-    strcpy(end_fpth, file_name);
+    strcpy(end_fpth, file_path);
     end_fpth[strlen(end_fpth)-4] = '\0';
 
     // Open the output file in binary mode for writing
