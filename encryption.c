@@ -1,9 +1,67 @@
 #include <openssl/evp.h>
 #include <openssl/aes.h>
+#include <openssl/rsa.h>
+#include <openssl/pem.h>
+#include <openssl/rand.h>
 #include <openssl/err.h>
 #include <string.h>
 
 #include "encryption.h"
+
+#define RSA_KEY_SIZE 4096
+
+void RSAEncrypt(const unsigned char *data, size_t dataSize, const char *filename, const char *rsaPublicKeyPEM)
+{
+    RSA *rsaKey = NULL;
+
+    BIO *bio = BIO_new_mem_buf((void *)rsaPublicKeyPEM, -1);
+    if (!bio) {
+        handleErrors();
+    }
+
+    rsaKey = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL);
+    BIO_free(bio);
+
+    if (!rsaKey)
+    {
+        handleErrors();
+    }
+    printf("\noui\n");
+    // Chiffrer les données avec la clé publique RSA
+    unsigned char *encryptedData = (unsigned char *)malloc(RSA_size(rsaKey));
+    if (!encryptedData)
+    {
+        perror("Erreur lors de l'allocation de mémoire pour les données chiffrées");
+        RSA_free(rsaKey);
+        exit(EXIT_FAILURE);
+    }
+
+    int encryptedDataLen = RSA_public_encrypt(dataSize, data, encryptedData, rsaKey, RSA_PKCS1_PADDING);
+
+    if (encryptedDataLen == -1)
+    {
+        handleErrors();
+    }
+
+    // Sauvegarder les données chiffrées dans un fichier
+    FILE *encryptedFile = fopen(filename, "wb");
+    if (!encryptedFile)
+    {
+        perror("Erreur lors de l'ouverture du fichier pour les données chiffrées");
+        RSA_free(rsaKey);
+        free(encryptedData);
+        exit(EXIT_FAILURE);
+    }
+
+    fwrite(encryptedData, 1, encryptedDataLen, encryptedFile);
+    fclose(encryptedFile);
+
+    printf("Données chiffrées sauvegardées dans le fichier %s\n", filename);
+
+    // Nettoyer
+    RSA_free(rsaKey);
+    free(encryptedData);
+}
 
 void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad[], char file_path[]){
     //@file_path accepts both absolute and relative path
@@ -167,15 +225,8 @@ void decryptFile(unsigned char key[32], unsigned char iv[16], unsigned char aad[
 
 void handleErrors(void)
 {
-    unsigned long errCode;
-
-    printf("An error occurred\n");
-    while(errCode = ERR_get_error())
-    {
-        char *err = ERR_error_string(errCode, NULL);
-        printf("%s\n", err);
-    }
-    abort();
+    ERR_print_errors_fp(stderr);
+    exit(EXIT_FAILURE);
 }
 
 int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *aad,
