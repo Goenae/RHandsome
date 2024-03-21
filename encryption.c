@@ -1,7 +1,12 @@
 #include <openssl/evp.h>
 #include <openssl/aes.h>
+
+#include <openssl/provider.h>
 #include <openssl/rsa.h>
-#include <openssl/pem.h>
+#include <openssl/err.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <openssl/rand.h>
 #include <openssl/err.h>
 #include <string.h>
@@ -10,57 +15,75 @@
 
 #define RSA_KEY_SIZE 4096
 
-void RSAEncrypt(const unsigned char *data, size_t dataSize, const char *filename, const char *rsaPublicKeyPEM)
-{
-    RSA *rsaKey = NULL;
 
-    BIO *bio = BIO_new_mem_buf((void *)rsaPublicKeyPEM, -1);
-    if (!bio) {
-        handleErrors();
+
+void error_and_exit(const char* msg) {
+    printf("%s\n", msg);
+    char buf[256];
+    int err = ERR_get_error();
+    ERR_error_string_n(err, buf, sizeof(buf));
+    printf("errno: %d, %s\n", err, buf);
+    exit(EXIT_FAILURE);
+}
+
+unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in){
+    EVP_PKEY *pkey = NULL;
+    BIO *keybio = NULL;
+
+
+    //Loading public key
+    keybio = BIO_new_mem_buf((void *)public_key_pem, -1);
+    if (keybio == NULL) {
+        error_and_exit("Failed to create key BIO");
+    }
+    pkey = PEM_read_bio_PUBKEY(keybio, NULL, NULL, NULL);
+    if (pkey == NULL) {
+        BIO_free(keybio);
+        error_and_exit("Failed to load public key");
     }
 
-    rsaKey = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL);
-    BIO_free(bio);
+    size_t inlen = strlen((char*)in);
 
-    if (!rsaKey)
-    {
-        handleErrors();
-    }
-    printf("\noui\n");
-    // Chiffrer les données avec la clé publique RSA
-    unsigned char *encryptedData = (unsigned char *)malloc(RSA_size(rsaKey));
-    if (!encryptedData)
-    {
-        perror("Erreur lors de l'allocation de mémoire pour les données chiffrées");
-        RSA_free(rsaKey);
-        exit(EXIT_FAILURE);
+
+    //Encrypt data
+    EVP_PKEY_CTX* enc_ctx = EVP_PKEY_CTX_new(pkey, NULL);
+    if (EVP_PKEY_encrypt_init(enc_ctx) <= 0) {
+        EVP_PKEY_free(pkey);
+        error_and_exit("EVP_PKEY_encrypt_init failed");
     }
 
-    int encryptedDataLen = RSA_public_encrypt(dataSize, data, encryptedData, rsaKey, RSA_PKCS1_PADDING);
-
-    if (encryptedDataLen == -1)
-    {
-        handleErrors();
+    if (EVP_PKEY_CTX_set_rsa_padding(enc_ctx, RSA_PKCS1_PADDING) <= 0) {
+        EVP_PKEY_free(pkey);
+        error_and_exit("EVP_PKEY_CTX_set_rsa_padding failed");
     }
 
-    // Sauvegarder les données chiffrées dans un fichier
-    FILE *encryptedFile = fopen(filename, "wb");
-    if (!encryptedFile)
-    {
-        perror("Erreur lors de l'ouverture du fichier pour les données chiffrées");
-        RSA_free(rsaKey);
-        free(encryptedData);
-        exit(EXIT_FAILURE);
+    size_t outlen;
+    if (EVP_PKEY_encrypt(enc_ctx, NULL, &outlen, in, inlen) <= 0) {
+        EVP_PKEY_free(pkey);
+        error_and_exit("EVP_PKEY_encrypt failed");
     }
 
-    fwrite(encryptedData, 1, encryptedDataLen, encryptedFile);
-    fclose(encryptedFile);
+    unsigned char* out = (unsigned char*)malloc(outlen);
+    if (out == NULL) {
+        EVP_PKEY_free(pkey);
+        error_and_exit("Memory allocation failed");
+    }
 
-    printf("Données chiffrées sauvegardées dans le fichier %s\n", filename);
+    if (EVP_PKEY_encrypt(enc_ctx, out, &outlen, in, inlen) <= 0) {
+        EVP_PKEY_free(pkey);
+        error_and_exit("EVP_PKEY_encrypt failed");
+    }
 
-    // Nettoyer
-    RSA_free(rsaKey);
-    free(encryptedData);
+    printf("Encrypted ciphertext (len:%zu) is:\n", outlen);
+    BIO_dump_fp(stdout, (const char*) out, outlen);
+
+
+    //Free
+    EVP_PKEY_free(pkey);
+    EVP_PKEY_CTX_free(enc_ctx);
+    //free(out);
+
+    return out;
 }
 
 void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad[], char file_path[]){

