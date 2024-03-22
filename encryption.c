@@ -43,7 +43,6 @@ unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in, size_t
         error_and_exit("Failed to load public key");
     }
 
-
     //Encrypt data
     EVP_PKEY_CTX* enc_ctx = EVP_PKEY_CTX_new(pkey, NULL);
     if (EVP_PKEY_encrypt_init(enc_ctx) <= 0) {
