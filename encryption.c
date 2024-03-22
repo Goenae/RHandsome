@@ -26,7 +26,8 @@ void error_and_exit(const char* msg) {
     exit(EXIT_FAILURE);
 }
 
-unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in){
+unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in, size_t inlen){
+    //Documentation example: https://github.com/danbev/learning-openssl/blob/master/rsa.c
     EVP_PKEY *pkey = NULL;
     BIO *keybio = NULL;
 
@@ -41,8 +42,6 @@ unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in){
         BIO_free(keybio);
         error_and_exit("Failed to load public key");
     }
-
-    size_t inlen = strlen((char*)in);
 
 
     //Encrypt data
@@ -63,7 +62,7 @@ unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in){
         error_and_exit("EVP_PKEY_encrypt failed");
     }
 
-    unsigned char* out = (unsigned char*)malloc(outlen);
+    unsigned char* out = OPENSSL_malloc(outlen);
     if (out == NULL) {
         EVP_PKEY_free(pkey);
         error_and_exit("Memory allocation failed");
@@ -71,6 +70,7 @@ unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in){
 
     if (EVP_PKEY_encrypt(enc_ctx, out, &outlen, in, inlen) <= 0) {
         EVP_PKEY_free(pkey);
+        free(out);
         error_and_exit("EVP_PKEY_encrypt failed");
     }
 
@@ -81,7 +81,6 @@ unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in){
     //Free
     EVP_PKEY_free(pkey);
     EVP_PKEY_CTX_free(enc_ctx);
-    //free(out);
 
     return out;
 }
