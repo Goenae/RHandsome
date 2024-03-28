@@ -28,58 +28,42 @@ void error_and_exit(const char* msg) {
 
 unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in, size_t inlen){
     //Documentation example: https://github.com/danbev/learning-openssl/blob/master/rsa.c
-    EVP_PKEY *pkey = NULL;
-    BIO *keybio = NULL;
+
+    EVP_PKEY* pkey = NULL;
+
+    BIO *bio;
+
+    bio = BIO_new_mem_buf( public_key_pem, strlen( public_key_pem) );
+    PEM_read_bio_PUBKEY( bio, &pkey, NULL, NULL );
 
 
-    //Loading public key
-    keybio = BIO_new_mem_buf((void *)public_key_pem, -1);
-    if (keybio == NULL) {
-        error_and_exit("Failed to create key BIO");
-    }
-    pkey = PEM_read_bio_PUBKEY(keybio, NULL, NULL, NULL);
-    if (pkey == NULL) {
-        BIO_free(keybio);
-        error_and_exit("Failed to load public key");
-    }
-
-    //Encrypt data
     EVP_PKEY_CTX* enc_ctx = EVP_PKEY_CTX_new(pkey, NULL);
     if (EVP_PKEY_encrypt_init(enc_ctx) <= 0) {
-        EVP_PKEY_free(pkey);
         error_and_exit("EVP_PKEY_encrypt_init failed");
     }
 
-    if (EVP_PKEY_CTX_set_rsa_padding(enc_ctx, RSA_PKCS1_PADDING) <= 0) {
-        EVP_PKEY_free(pkey);
+    if (EVP_PKEY_CTX_set_rsa_padding(enc_ctx, RSA_PKCS1_OAEP_PADDING) <= 0) {
         error_and_exit("EVP_PKEY_CTX_set_rsa_padding failed");
     }
 
     size_t outlen;
-    if (EVP_PKEY_encrypt(enc_ctx, NULL, &outlen, in, inlen) <= 0) {
-        EVP_PKEY_free(pkey);
+    unsigned char* out;
+
+    printf("Going to encrypt: %s\n", in);
+    // Determine the size of the output
+    if (EVP_PKEY_encrypt(enc_ctx, NULL, &outlen, in, strlen ((char*)in)) <= 0) {
         error_and_exit("EVP_PKEY_encrypt failed");
     }
+    printf("Determined ciphertext to be of length: %zu) is:\n", outlen);
 
-    unsigned char* out = OPENSSL_malloc(outlen);
-    if (out == NULL) {
-        EVP_PKEY_free(pkey);
-        error_and_exit("Memory allocation failed");
-    }
+    out = OPENSSL_malloc(outlen);
 
-    if (EVP_PKEY_encrypt(enc_ctx, out, &outlen, in, inlen) <= 0) {
-        EVP_PKEY_free(pkey);
-        free(out);
+    if (EVP_PKEY_encrypt(enc_ctx, out, &outlen, in, strlen ((char*)in)) <= 0) {
         error_and_exit("EVP_PKEY_encrypt failed");
     }
 
     printf("Encrypted ciphertext (len:%zu) is:\n", outlen);
     BIO_dump_fp(stdout, (const char*) out, outlen);
-
-
-    //Free
-    EVP_PKEY_free(pkey);
-    EVP_PKEY_CTX_free(enc_ctx);
 
     return out;
 }
