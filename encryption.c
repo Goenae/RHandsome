@@ -51,19 +51,19 @@ unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in, size_t
 
     printf("Going to encrypt: %s\n", in);
     // Determine the size of the output
-    if (EVP_PKEY_encrypt(enc_ctx, NULL, &outlen, in, strlen ((char*)in)) <= 0) {
-        error_and_exit("EVP_PKEY_encrypt failed");
+    if (EVP_PKEY_encrypt(enc_ctx, NULL, &outlen, in, inlen) <= 0) {
+        error_and_exit("EVP_PKEY_encrypt failed1");
     }
-    printf("Determined ciphertext to be of length: %zu) is:\n", outlen);
 
     out = OPENSSL_malloc(outlen);
 
-    if (EVP_PKEY_encrypt(enc_ctx, out, &outlen, in, strlen ((char*)in)) <= 0) {
-        error_and_exit("EVP_PKEY_encrypt failed");
+    if (EVP_PKEY_encrypt(enc_ctx, out, &outlen, in, inlen) <= 0) {
+        error_and_exit("EVP_PKEY_encrypt failed2");
     }
-
+    /*Debug
     printf("Encrypted ciphertext (len:%zu) is:\n", outlen);
     BIO_dump_fp(stdout, (const char*) out, outlen);
+    */
 
     return out;
 }

