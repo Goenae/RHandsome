@@ -6,6 +6,7 @@
 #define BASIC_C_RANSOMWARE_ENCRYPTION_H
 
 void error_and_exit(const char* msg);
+unsigned char* decrpyt_RSA(const char *private_key_path, const unsigned char* in, size_t inlen);
 unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in, size_t inlen);
 void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad[], char file_path[]);
 void decryptFile(unsigned char key[32], unsigned char iv[16], unsigned char aad[], char file_path[]);

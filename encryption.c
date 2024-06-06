@@ -3,6 +3,7 @@
 
 #include <openssl/provider.h>
 #include <openssl/rsa.h>
+#include <openssl/pem.h>
 #include <openssl/err.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,6 +25,26 @@ void error_and_exit(const char* msg) {
     ERR_error_string_n(err, buf, sizeof(buf));
     printf("errno: %d, %s\n", err, buf);
     exit(EXIT_FAILURE);
+}
+
+unsigned char* decrpyt_RSA(const char *private_key_path, const unsigned char* in, size_t inlen){
+    //Documentation example: https://github.com/danbev/learning-openssl/blob/master/rsa.c
+
+    EVP_PKEY* pkey = NULL;
+
+    FILE *fptr;
+    fptr = fopen(private_key_path, "r");
+
+    char privkey_content[4096];
+
+    fgets(privkey_content, 128, fptr);
+
+    printf("%s", privkey_content);
+
+    fclose(fptr); 
+
+    return "yeet";
+
 }
 
 unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in, size_t inlen){
