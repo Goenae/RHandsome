@@ -27,24 +27,75 @@ void error_and_exit(const char* msg) {
     exit(EXIT_FAILURE);
 }
 
-unsigned char* decrpyt_RSA(const char *private_key_path, const unsigned char* in, size_t inlen){
+unsigned char* decrypt_RSA(const char *private_key_path, const unsigned char* in, size_t inlen){
     //Documentation example: https://github.com/danbev/learning-openssl/blob/master/rsa.c
+    EVP_PKEY *pkey = NULL;
+    EVP_PKEY_CTX *ctx = NULL;
+    unsigned char *out = NULL;
+    size_t outlen = 0;
 
-    EVP_PKEY* pkey = NULL;
+    //Open private key and get its pointer
+    FILE *fp = fopen(private_key_path, "r");
+    if (fp == NULL) {
+        perror("Unable to open file");
+        return NULL;
+    }
 
-    FILE *fptr;
-    fptr = fopen(private_key_path, "r");
+    //Read private key
+    pkey = PEM_read_PrivateKey(fp, NULL, NULL, NULL);
+    fclose(fp);
+    if (pkey == NULL) {
+        ERR_print_errors_fp(stderr);
+        return NULL;
+    }
 
-    char privkey_content[4096];
+    //Create decryption context
+    ctx = EVP_PKEY_CTX_new(pkey, NULL);
+    if (ctx == NULL) {
+        ERR_print_errors_fp(stderr);
+        EVP_PKEY_free(pkey);
+        return NULL;
+    }
 
-    fgets(privkey_content, 128, fptr);
+    //Init decryption over EVP api
+    if (EVP_PKEY_decrypt_init(ctx) <= 0) {
+        ERR_print_errors_fp(stderr);
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(pkey);
+        return NULL;
+    }
 
-    printf("%s", privkey_content);
+    //Check decryption and get decryption length
+    if (EVP_PKEY_decrypt(ctx, NULL, &outlen, in, inlen) <= 0) {
+        ERR_print_errors_fp(stderr);
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(pkey);
+        return NULL;
+    }
 
-    fclose(fptr); 
+    //Create result buffer
+    out = (unsigned char *)malloc(outlen);
+    if (out == NULL) {
+        perror("Unable to allocate memory for output");
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(pkey);
+        return NULL;
+    }
 
-    return "yeet";
+    //Decrypt
+    if (EVP_PKEY_decrypt(ctx, out, &outlen, in, inlen) <= 0) {
+        ERR_print_errors_fp(stderr);
+        free(out);
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(pkey);
+        return NULL;
+    }
 
+    // Free
+    EVP_PKEY_CTX_free(ctx);
+    EVP_PKEY_free(pkey);
+
+    return out;
 }
 
 unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in, size_t inlen){

