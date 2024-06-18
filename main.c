@@ -19,8 +19,6 @@
 #include "files.h"
 #include "encryption.h"
 
-#define RSA_KEY_SIZE 4096
-
 void sendFileToApi(const char *path, const char *id, const char *api);
 
 
@@ -54,19 +52,21 @@ int main(){
     const unsigned char* encrypted_aes_key = encrypt_RSA(public_key_pem, key, key_size);
     const unsigned char* encrypted_iv = encrypt_RSA(public_key_pem, iv, iv_size);
 
-    char hex_string[RSA_KEY_SIZE / 8 * 2 + 1]; 
-    char hex_iv[RSA_KEY_SIZE / 8 * 2 + 1];       
+    size_t aes_size = sizeof(encrypted_aes_key);
+    
+    char hex_string[aes_size / 8 * 2 + 1]; 
+    char hex_iv[iv_size / 8 * 2 + 1];       
 
     // Convert octect in hexa and stock it
-    for (int i = 0; i < RSA_KEY_SIZE / 8; ++i) {
+    for (int i = 0; i < aes_size / 8; ++i) {
         sprintf(hex_string + i * 2, "%02x", encrypted_aes_key[i]);
     }
-    hex_string[RSA_KEY_SIZE / 8 * 2] = '\0';
+    hex_string[aes_size / 8 * 2] = '\0';
 
-    for (int i = 0; i < RSA_KEY_SIZE / 8; ++i) {
+    for (int i = 0; i < iv_size / 8; ++i) {
         sprintf(hex_iv + i * 2, "%02x", encrypted_iv[i]);
     }
-    hex_iv[RSA_KEY_SIZE / 8 * 2] = '\0';
+    hex_iv[iv_size / 8 * 2] = '\0';
 
     save_hex_to_file("iv.txt", (unsigned char *)hex_iv, strlen(hex_iv)); 
     printf("IV: %s\n", hex_iv);
