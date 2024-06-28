@@ -16,7 +16,6 @@
 #define RSA_KEY_SIZE 4096
 
 
-
 void error_and_exit(const char* msg) {
     printf("%s\n", msg);
     char buf[256];
@@ -38,14 +37,19 @@ unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in, size_t
 
 
     EVP_PKEY_CTX* enc_ctx = EVP_PKEY_CTX_new(pkey, NULL);
+
     if (EVP_PKEY_encrypt_init(enc_ctx) <= 0) {
         error_and_exit("EVP_PKEY_encrypt_init failed");
     }
 
-    if (EVP_PKEY_CTX_set_rsa_padding(enc_ctx, RSA_PKCS1_OAEP_PADDING) <= 0) {
+    /*if (EVP_PKEY_CTX_set_rsa_padding(enc_ctx, RSA_PKCS1_OAEP_PADDING) <= 0) {
         error_and_exit("EVP_PKEY_CTX_set_rsa_padding failed");
     }
 
+    int key_size = EVP_PKEY_size(pkey);
+    printf("RSA key size: %d bytes\n", key_size);
+    */
+   
     size_t outlen;
     unsigned char* out;
 
@@ -67,6 +71,7 @@ unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in, size_t
 
     return out;
 }
+
 
 void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad[], char file_path[]){
     //@file_path accepts both absolute and relative path
