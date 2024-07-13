@@ -181,13 +181,13 @@ void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, con
     #ifdef _WIN32
     path = "C:\\Users\\me\\Documents";
     #else
-    path = "/home/mike/Images";
+    path = "/home/mike/Pictures";
     #endif
 
     PathList pathList;
     initPathList(&pathList);
 
-    linuxListFiles(path, &pathList);
+    listFiles(path, &pathList);
 
     //Browse files
     for (size_t i = 0; i < pathList.count; ++i) {
