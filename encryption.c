@@ -42,14 +42,10 @@ unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in, size_t
         error_and_exit("EVP_PKEY_encrypt_init failed");
     }
 
-    if (EVP_PKEY_CTX_set_rsa_padding(enc_ctx, RSA_PKCS1_OAEP_PADDING) <= 0) {
-        error_and_exit("EVP_PKEY_CTX_set_rsa_padding failed");
-    }
-
     size_t outlen;
     unsigned char* out;
 
-    printf("Going to encrypt: %s\n", in);
+    // printf("Going to encrypt: %s\n", in);
     // Determine the size of the output
     if (EVP_PKEY_encrypt(enc_ctx, NULL, &outlen, in, inlen) <= 0) {
         error_and_exit("EVP_PKEY_encrypt failed1");
@@ -67,6 +63,65 @@ unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in, size_t
 
     return out;
 }
+
+unsigned char* decrypt_RSA(const char *private_key_path, const unsigned char* in, size_t inlen){
+    //Documentation example: https://github.com/danbev/learning-openssl/blob/master/rsa.c
+    EVP_PKEY *pkey = NULL;
+    EVP_PKEY_CTX *ctx = NULL;
+    unsigned char *out = NULL;
+    size_t outlen = 0;
+    printf("\n1\n");
+    //Open private key and get its pointer
+    FILE *fp = fopen(private_key_path, "r");
+
+    printf("3\n");
+
+    //Read private key
+    pkey = PEM_read_PrivateKey(fp, NULL, NULL, NULL);
+    fclose(fp);
+
+    //Create decryption context
+    ctx = EVP_PKEY_CTX_new(pkey, NULL);
+    printf("7");
+
+    
+    if (ctx == NULL) {
+        printf("8");
+
+        ERR_print_errors_fp(stderr);
+        EVP_PKEY_free(pkey);
+        return NULL;
+    }
+    printf("9");
+    //Init decryption over EVP api
+    if (EVP_PKEY_decrypt_init(ctx) <= 0) {
+        ERR_print_errors_fp(stderr);
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(pkey);
+        return NULL;
+    }
+
+    //Check decryption and get decryption length
+    if (EVP_PKEY_decrypt(ctx, NULL, &outlen, in, inlen) <= 0) {
+        ERR_print_errors_fp(stderr);
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(pkey);
+        return NULL;
+    }
+
+    //Create result buffer
+    out = (unsigned char *)malloc(outlen);
+
+    //Decrypt
+    EVP_PKEY_decrypt(ctx, out, &outlen, in, inlen);
+
+    // Free
+    EVP_PKEY_CTX_free(ctx);
+    EVP_PKEY_free(pkey);
+
+    return out;
+}
+
 
 void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad[], char file_path[]){
     //@file_path accepts both absolute and relative path

@@ -14,30 +14,62 @@
 
 #include "files.h"
 
-//->Linux functions
-void linuxListFiles(const char *path, PathList *pathList) {
+// Function to list files for both Linux and Windows
+void listFiles(const char *path, PathList *pathList) {
+    
+#ifdef _WIN32
+    WIN32_FIND_DATA findFileData;
+    HANDLE hFind = INVALID_HANDLE_VALUE;
+
+    char dirSpec[MAX_PATH];
+    snprintf(dirSpec, sizeof(dirSpec), "%s\\*", path);
+
+    hFind = FindFirstFile(dirSpec, &findFileData);
+
+    if (hFind == INVALID_HANDLE_VALUE) {
+        return;
+    } 
+
+    do {
+        if (findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            if (strcmp(findFileData.cFileName, ".") != 0 && strcmp(findFileData.cFileName, "..") != 0) {
+                char subPath[MAX_PATH];
+                snprintf(subPath, sizeof(subPath), "%s\\%s", path, findFileData.cFileName);
+                listFiles(subPath, pathList);
+            }
+        } else {
+            char filePath[MAX_PATH];
+            snprintf(filePath, sizeof(filePath), "%s\\%s", path, findFileData.cFileName);
+            addToPathList(pathList, filePath);
+        }
+    } while (FindNextFile(hFind, &findFileData) != 0);
+
+    FindClose(hFind);
+
+#else
     struct dirent *entry;
     DIR *dp = opendir(path);
 
     if (dp == NULL) {
-        //Woops
+        return;
     }
 
     while ((entry = readdir(dp)) != NULL) {
         if (entry->d_type == DT_REG) {
-            char file_path[1024];
-            snprintf(file_path, sizeof(file_path), "%s/%s", path, entry->d_name);
-            addToPathList(pathList, file_path);
+            char filePath[1024];
+            snprintf(filePath, sizeof(filePath), "%s/%s", path, entry->d_name);
+            addToPathList(pathList, filePath);
         } else if (entry->d_type == DT_DIR) {
             if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
                 char subPath[1024];
                 snprintf(subPath, sizeof(subPath), "%s/%s", path, entry->d_name);
-                linuxListFiles(subPath, pathList);
+                listFiles(subPath, pathList);
             }
         }
     }
 
     closedir(dp);
+#endif
 }
 
 //Init PathList structure
