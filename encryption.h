@@ -16,14 +16,10 @@ struct private_key_class {
 
 
 void error_and_exit(const char* msg);
-<<<<<<< Updated upstream
-unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in, size_t inlen);
-=======
 int load_public_key(const char *pub_key_file, struct public_key_class *pub_key);
 void free_public_key(struct public_key_class *pub_key);
 char *rsa_encrypt(const char *iv_lisible, struct public_key_class *pub_key);
 
->>>>>>> Stashed changes
 void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad[], char file_path[]);
 void decryptFile(unsigned char key[32], unsigned char iv[16], unsigned char aad[], char file_path[]);
 void handleErrors(void);

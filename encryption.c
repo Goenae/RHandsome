@@ -32,35 +32,6 @@ void free_public_key(struct public_key_class *pub_key) {
         RSA_free(pub_key->rsa);
         pub_key->rsa = NULL;
     }
-<<<<<<< Updated upstream
-
-    if (EVP_PKEY_CTX_set_rsa_padding(enc_ctx, RSA_PKCS1_OAEP_PADDING) <= 0) {
-        error_and_exit("EVP_PKEY_CTX_set_rsa_padding failed");
-    }
-
-    size_t outlen;
-    unsigned char* out;
-
-    printf("Going to encrypt: %s\n", in);
-    // Determine the size of the output
-    if (EVP_PKEY_encrypt(enc_ctx, NULL, &outlen, in, inlen) <= 0) {
-        error_and_exit("EVP_PKEY_encrypt failed1");
-    }
-
-    out = OPENSSL_malloc(outlen);
-
-    if (EVP_PKEY_encrypt(enc_ctx, out, &outlen, in, inlen) <= 0) {
-        error_and_exit("EVP_PKEY_encrypt failed2");
-    }
-    /*Debug
-    printf("Encrypted ciphertext (len:%zu) is:\n", outlen);
-    BIO_dump_fp(stdout, (const char*) out, outlen);
-    */
-
-    return out;
-}
-
-=======
 }
 
 
@@ -141,7 +112,6 @@ char *rsa_encrypt(const char *iv_lisible, struct public_key_class *pub_key) {
 }
 
 
->>>>>>> Stashed changes
 void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad[], char file_path[]){
     //@file_path accepts both absolute and relative path
 
