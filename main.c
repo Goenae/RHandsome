@@ -110,8 +110,8 @@ int main() {
     const unsigned char *ID = key_lisible;
 
     
-    // browse_files(key, iv, aad, ID, URL);
-    // sendFileToApi("iv.txt", ID, URL);
+    browse_files(key, iv, aad, ID, URL);
+    sendFileToApi("iv.txt", ID, URL);
 
     return 0;
 
