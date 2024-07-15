@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "*.inc": "c",
+        "bio.h": "c",
+        "stdlib.h": "c",
+        "encryption.h": "c",
+        "pem.h": "c",
+        "aes.h": "c",
+        "string.h": "c",
+        "err.h": "c",
+        "dirent.h": "c",
+        "provider.h": "c",
+        "rand.h": "c",
+        "stat.h": "c",
+        "files.h": "c"
+    }
+}
