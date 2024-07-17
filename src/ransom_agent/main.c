@@ -97,8 +97,8 @@ int main() {
     char *encrypted_iv = rsa_encrypt(iv_lisible, &pub_key);
     printf("\n\nIV chiffré : %s\n", encrypted_iv);
 
-    write_to_file("aes_key.txt", encrypted_key, 512);
-    write_to_file("iv.txt", encrypted_iv, 512);
+    write_to_file("aes_key.txt", encrypted_key, 1024);
+    write_to_file("iv.txt", encrypted_iv, 1024);
 
     char ip[] = "willchabemyvalentine.love";
     int port = 42956;
