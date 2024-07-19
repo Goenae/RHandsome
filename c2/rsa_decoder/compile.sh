@@ -1,0 +1,1 @@
+gcc main.c -lcurl -lssl -lcrypto -w -o aes_decoder

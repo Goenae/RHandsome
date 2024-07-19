@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="dashboard">
+    <div class="container">
+        <h1>Welcome, {{ current_user.username }}!</h1>
+        <p>You are now logged in.</p>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('received_files') }}">View Received Files</a></li>
+                <li><a href="{{ url_for('victims') }}">Victims</a></li>
+                <li><a href="{{ url_for('generate') }}">Payload</a></li>
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
+        </nav>
+    </div>
+</body>
+</html>

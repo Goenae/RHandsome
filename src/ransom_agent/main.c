@@ -234,7 +234,7 @@ void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, con
     #ifdef _WIN32
     path = "C:\\Users\\me\\Documents";
     #else
-    path = "/home/mike/Pictures";
+    path = "/home/lorette/test1";
     #endif
 
     PathList pathList;

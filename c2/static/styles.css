@@ -1,0 +1,106 @@
+/* static/css/styles.css */
+/* Global Styles */
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+    font-family: 'Courier New', Courier, monospace;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    text-align: center;
+}
+
+h1 {
+    color: #ff5555;
+    animation: flicker 1.5s infinite alternate;
+}
+
+a {
+    color: #00adb5;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+a:hover {
+    color: #ff5555;
+}
+
+.container {
+    width: 80%;
+    max-width: 600px;
+    padding: 2em;
+    background-color: #1e1e1e;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+}
+
+nav ul li {
+    margin: 1em 0;
+}
+
+.file-list, .folder-list, .messages {
+    list-style: none;
+    padding: 0;
+}
+
+.file-list li, .folder-list li {
+    margin: 0.5em 0;
+    padding: 0.5em;
+    background-color: #292929;
+    border-radius: 5px;
+}
+
+.messages .message {
+    margin: 0.5em 0;
+    padding: 0.5em;
+    border-radius: 5px;
+}
+
+.message.success {
+    background-color: #4caf50;
+}
+
+.message.error {
+    background-color: #f44336;
+}
+
+.form-group {
+    margin: 1em 0;
+}
+
+input, select, button {
+    width: 100%;
+    padding: 0.5em;
+    margin: 0.5em 0;
+    background: none;
+    color: #e0e0e0;
+    border: 2px solid #00adb5;
+    border-radius: 5px;
+}
+
+button {
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s;
+}
+
+button:hover {
+    background: #ff5555;
+    color: #121212;
+}
+
+@keyframes flicker {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
