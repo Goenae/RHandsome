@@ -11,6 +11,12 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#include <shlobj.h>
+#include <wchar.h>
+#include <lmcons.h>
+#endif
 
 #include "files.h"
 
