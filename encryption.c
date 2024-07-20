@@ -1,20 +1,20 @@
-#include <openssl/evp.h>
-#include <openssl/aes.h>
 
-#include <openssl/provider.h>
-#include <openssl/rsa.h>
-#include <openssl/err.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <openssl/rand.h>
+#include <openssl/evp.h>
+#include <openssl/aes.h>
+#include <openssl/provider.h>
+#include <openssl/rsa.h>
 #include <openssl/err.h>
-#include <string.h>
+#include <openssl/pem.h>
+#include <openssl/bio.h>
+#include <openssl/rand.h>
 
+#include <string.h>
 #include "encryption.h"
 
 #define RSA_KEY_SIZE 4096
-
 
 
 void error_and_exit(const char* msg) {
@@ -26,47 +26,104 @@ void error_and_exit(const char* msg) {
     exit(EXIT_FAILURE);
 }
 
-unsigned char* encrypt_RSA(const char *public_key_pem, unsigned char* in, size_t inlen){
-    //Documentation example: https://github.com/danbev/learning-openssl/blob/master/rsa.c
-
-    EVP_PKEY* pkey = NULL;
-
-    BIO *bio;
-
-    bio = BIO_new_mem_buf( public_key_pem, strlen( public_key_pem) );
-    PEM_read_bio_PUBKEY( bio, &pkey, NULL, NULL );
-
-
-    EVP_PKEY_CTX* enc_ctx = EVP_PKEY_CTX_new(pkey, NULL);
-    if (EVP_PKEY_encrypt_init(enc_ctx) <= 0) {
-        error_and_exit("EVP_PKEY_encrypt_init failed");
+char* debug_bytes(const unsigned char* byte_sequence, size_t sequence_size){
+    char* lisible = (char*)malloc(sequence_size * 2 + 1); // +1 pour le caractère de fin de chaîne
+    if (lisible == NULL) {
+        fprintf(stderr, "Memory allocation failed.\n");
+        exit(EXIT_FAILURE);
     }
-
-    if (EVP_PKEY_CTX_set_rsa_padding(enc_ctx, RSA_PKCS1_OAEP_PADDING) <= 0) {
-        error_and_exit("EVP_PKEY_CTX_set_rsa_padding failed");
+    size_t j = 0;
+    for (size_t i = 0; i < sequence_size; ++i) {
+        j += sprintf(&lisible[j], "%02x", byte_sequence[i]);
     }
-
-    size_t outlen;
-    unsigned char* out;
-
-    printf("Going to encrypt: %s\n", in);
-    // Determine the size of the output
-    if (EVP_PKEY_encrypt(enc_ctx, NULL, &outlen, in, inlen) <= 0) {
-        error_and_exit("EVP_PKEY_encrypt failed1");
-    }
-
-    out = OPENSSL_malloc(outlen);
-
-    if (EVP_PKEY_encrypt(enc_ctx, out, &outlen, in, inlen) <= 0) {
-        error_and_exit("EVP_PKEY_encrypt failed2");
-    }
-    /*Debug
-    printf("Encrypted ciphertext (len:%zu) is:\n", outlen);
-    BIO_dump_fp(stdout, (const char*) out, outlen);
-    */
-
-    return out;
+    return lisible;
 }
+
+
+void free_public_key(struct public_key_class *pub_key) {
+    if (pub_key->rsa) {
+        RSA_free(pub_key->rsa);
+        pub_key->rsa = NULL;
+    }
+}
+
+
+int load_public_key(const char *public_key, struct public_key_class *pub_key) {
+    BIO *bio = BIO_new_mem_buf(public_key, -1);
+    if (!bio) {
+        fprintf(stderr, "Erreur lors de la création du BIO en mémoire\n");
+        return -1;
+    }
+
+    RSA *rsa = PEM_read_bio_RSA_PUBKEY(bio, NULL, NULL, NULL);
+    BIO_free(bio);
+
+    if (!rsa) {
+        fprintf(stderr, "Erreur lors de la lecture de la clé publique PEM\n");
+        return -1;
+    }
+
+    pub_key->rsa = rsa;
+
+    return 0;
+}
+
+
+char *rsa_encrypt(const char *iv_lisible, struct public_key_class *pub_key) {
+
+    size_t hex_len = strlen(iv_lisible);
+    if (hex_len % 2 != 0) {
+        fprintf(stderr, "La longueur de la chaîne hexadécimale n'est pas paire.\n");
+        return NULL;
+    }
+
+    size_t bin_len = hex_len / 2;
+    unsigned char *binary_data = (unsigned char *)malloc(bin_len);
+    if (!binary_data) {
+        perror("Erreur d'allocation de mémoire");
+        return NULL;
+    }
+
+
+    for (size_t i = 0; i < bin_len; ++i) {
+        sscanf(iv_lisible + 2 * i, "%2hhx", &binary_data[i]);
+    }
+
+
+    unsigned char *encrypted_data = (unsigned char *)malloc(RSA_size(pub_key->rsa));
+    if (!encrypted_data) {
+        perror("Erreur d'allocation de mémoire");
+        free(binary_data);
+        return NULL;
+    }
+
+    int encrypted_length = RSA_public_encrypt(bin_len, binary_data, encrypted_data, pub_key->rsa, RSA_PKCS1_OAEP_PADDING);
+    free(binary_data); 
+
+    if (encrypted_length == -1) {
+        fprintf(stderr, "Erreur lors du chiffrement RSA.\n");
+        free(encrypted_data);
+        return NULL;
+    }
+
+
+    char *encrypted_hex = (char *)malloc(2 * encrypted_length + 1);
+    if (!encrypted_hex) {
+        perror("Erreur d'allocation de mémoire");
+        free(encrypted_data);
+        return NULL;
+    }
+
+    for (int i = 0; i < encrypted_length; ++i) {
+        sprintf(&encrypted_hex[2*i], "%02x", encrypted_data[i]);
+    }
+    encrypted_hex[2 * encrypted_length] = '\0';
+
+    free(encrypted_data); // Libérer la mémoire après utilisation des données chiffrées
+
+    return encrypted_hex;
+}
+
 
 void encrypt_file(unsigned char key[32], unsigned char iv[16], unsigned char aad[], char file_path[]){
     //@file_path accepts both absolute and relative path
