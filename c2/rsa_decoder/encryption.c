@@ -27,7 +27,7 @@ void free_private_key(struct private_key_class *priv_key) {
 int load_private_key(const char *priv_key_file, struct private_key_class *priv_key) {
     FILE *fp = fopen(priv_key_file, "rb");
     if (!fp) {
-        perror("Erreur lors de l'ouverture du fichier de clé privée");
+        perror("Error opening file with the private key.");
         return -1;
     }
 
@@ -35,7 +35,7 @@ int load_private_key(const char *priv_key_file, struct private_key_class *priv_k
     fclose(fp);
 
     if (!rsa) {
-        fprintf(stderr, "Erreur lors de la lecture de la clé privée PEM\n");
+        fprintf(stderr, "Error reading private key PEM.\n");
         return -1;
     }
 
@@ -49,7 +49,7 @@ unsigned char *rsa_decrypt(const char *encrypted_hex, struct private_key_class *
     size_t encrypted_len = strlen(encrypted_hex) / 2;
     unsigned char *encrypted_data = (unsigned char *)malloc(encrypted_len);
     if (!encrypted_data) {
-        perror("Erreur d'allocation de mémoire");
+        perror("Error allocating memory.");
         return NULL;
     }
 
@@ -59,7 +59,7 @@ unsigned char *rsa_decrypt(const char *encrypted_hex, struct private_key_class *
 
     unsigned char *decrypted_data = (unsigned char *)malloc(RSA_size(priv_key->rsa));
     if (!decrypted_data) {
-        perror("Erreur d'allocation de mémoire");
+        perror("Error allocating memory.");
         free(encrypted_data);
         return NULL;
     }
@@ -68,7 +68,7 @@ unsigned char *rsa_decrypt(const char *encrypted_hex, struct private_key_class *
     free(encrypted_data);
 
     if (decrypted_length == -1) {
-        fprintf(stderr, "Erreur lors du déchiffrement RSA.\n");
+        fprintf(stderr, "Error during RSA decryption.\n");
         free(decrypted_data);
         return NULL;
     }

@@ -39,13 +39,11 @@ int main(int argc, char ** argv) {
 
     free_private_key(&priv_key);
 
-    // Clé privée PEM en dur
-
 }
 
 
 char* debug_bytes(const unsigned char* byte_sequence, size_t sequence_size){
-    char* lisible = (char*)malloc(sequence_size * 2 + 1); // +1 pour le caractère de fin de chaîne
+    char* lisible = (char*)malloc(sequence_size * 2 + 1); 
     if (lisible == NULL) {
         fprintf(stderr, "Memory allocation failed.\n");
         exit(EXIT_FAILURE);
@@ -54,7 +52,6 @@ char* debug_bytes(const unsigned char* byte_sequence, size_t sequence_size){
     for (size_t i = 0; i < sequence_size; ++i) {
         j += sprintf(&lisible[j], "%02x", byte_sequence[i]);
     }
-    // printf("IV : %s\n", lisible); // Affiche la représentation hexadécimale
     return lisible;
 }
 

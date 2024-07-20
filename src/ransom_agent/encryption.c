@@ -26,6 +26,19 @@ void error_and_exit(const char* msg) {
     exit(EXIT_FAILURE);
 }
 
+char* debug_bytes(const unsigned char* byte_sequence, size_t sequence_size){
+    char* lisible = (char*)malloc(sequence_size * 2 + 1); 
+    if (lisible == NULL) {
+        fprintf(stderr, "Memory allocation failed.\n");
+        exit(EXIT_FAILURE);
+    }
+    size_t j = 0;
+    for (size_t i = 0; i < sequence_size; ++i) {
+        j += sprintf(&lisible[j], "%02x", byte_sequence[i]);
+    }
+    return lisible;
+}
+
 
 void free_public_key(struct public_key_class *pub_key) {
     if (pub_key->rsa) {
@@ -38,7 +51,7 @@ void free_public_key(struct public_key_class *pub_key) {
 int load_public_key(const char *public_key, struct public_key_class *pub_key) {
     BIO *bio = BIO_new_mem_buf(public_key, -1);
     if (!bio) {
-        fprintf(stderr, "Erreur lors de la création du BIO en mémoire\n");
+        fprintf(stderr, "Error creating BIO in memory\n");
         return -1;
     }
 
@@ -46,7 +59,7 @@ int load_public_key(const char *public_key, struct public_key_class *pub_key) {
     BIO_free(bio);
 
     if (!rsa) {
-        fprintf(stderr, "Erreur lors de la lecture de la clé publique PEM\n");
+        fprintf(stderr, "Error reading public key PEM\n");
         return -1;
     }
 
@@ -60,14 +73,14 @@ char *rsa_encrypt(const char *iv_lisible, struct public_key_class *pub_key) {
 
     size_t hex_len = strlen(iv_lisible);
     if (hex_len % 2 != 0) {
-        fprintf(stderr, "La longueur de la chaîne hexadécimale n'est pas paire.\n");
+        fprintf(stderr, "The hexa string length is not even.\n");
         return NULL;
     }
 
     size_t bin_len = hex_len / 2;
     unsigned char *binary_data = (unsigned char *)malloc(bin_len);
     if (!binary_data) {
-        perror("Erreur d'allocation de mémoire");
+        perror("Error allocating memory");
         return NULL;
     }
 
@@ -79,7 +92,7 @@ char *rsa_encrypt(const char *iv_lisible, struct public_key_class *pub_key) {
 
     unsigned char *encrypted_data = (unsigned char *)malloc(RSA_size(pub_key->rsa));
     if (!encrypted_data) {
-        perror("Erreur d'allocation de mémoire");
+        perror("Error allocating memory");
         free(binary_data);
         return NULL;
     }
@@ -88,7 +101,7 @@ char *rsa_encrypt(const char *iv_lisible, struct public_key_class *pub_key) {
     free(binary_data); 
 
     if (encrypted_length == -1) {
-        fprintf(stderr, "Erreur lors du chiffrement RSA.\n");
+        fprintf(stderr, "Error during RSA encryption.\n");
         free(encrypted_data);
         return NULL;
     }
@@ -96,7 +109,7 @@ char *rsa_encrypt(const char *iv_lisible, struct public_key_class *pub_key) {
 
     char *encrypted_hex = (char *)malloc(2 * encrypted_length + 1);
     if (!encrypted_hex) {
-        perror("Erreur d'allocation de mémoire");
+        perror("Error allocating memory");
         free(encrypted_data);
         return NULL;
     }
