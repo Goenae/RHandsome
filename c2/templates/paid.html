@@ -4,20 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment Confirmed</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body>
+<body class="payment-confirmed">
     <div class="container">
         <h1>Payment Confirmed</h1>
         <p>Your payment has been confirmed. You can now download the decryption program.</p>
         <form action="{{ url_for('download_decryption') }}" method="post">
-            <label>
-                <input type="radio" name="os" value="Windows" required>
-                Windows
-            </label><br>
-            <label>
-                <input type="radio" name="os" value="Linux" required>
-                Linux
-            </label><br>
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="os" value="Windows" required>
+                    Windows
+                </label>
+                <label>
+                    <input type="radio" name="os" value="Linux" required>
+                    Linux
+                </label>
+            </div>
             <button type="submit" class="button">Download</button>
         </form>
     </div>

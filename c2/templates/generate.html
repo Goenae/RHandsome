@@ -8,10 +8,10 @@
 </head>
 <body class="generate">
     <div class="container">
-        <h1>Saisir IP et Port</h1>
+        <h1>Payload</h1>
         <form method="post" action="/generate">
             <div class="form-group">
-                <label for="ip">Adresse IP :</label>
+                <label for="ip">IP Address / Domain name:</label>
                 <input type="text" id="ip" name="ip" required>
             </div>
             <div class="form-group">
@@ -19,13 +19,13 @@
                 <input type="text" id="port" name="port" required>
             </div>
             <div class="form-group">
-                <label for="os">Type d'OS: </label>
+                <label for="os">OS Type: </label>
                 <select name="choice" id="choices">
                     <option value="Windows">Windows</option>
                     <option value="Linux">Linux</option>
                 </select>
             </div>
-            <button type="submit">Soumettre</button>
+            <button type="submit">Submit</button>
         </form>
     </div>
 </body>

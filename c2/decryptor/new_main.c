@@ -65,8 +65,8 @@ int main(){
     //Authentication string
     static const unsigned char aad[] = "Cyan";
 
-    char* aes_string = "48e5063557baaf33f6573029eeccc461ca54e71b3ac727473abb0018a545f6f3";
-    char* iv_string = "8f9b77eaa9a0905fb8ae87a3ac3303a4"; 
+    char* aes_string = "a40674358924c661af3c309b5472a2919b2798959292afb6962931d80ba33b95";
+    char* iv_string = "3ef5d48173066ddfa214825a971243c9"; 
 
     size_t aes_array_size = 32;
     size_t iv_array_size = 16;

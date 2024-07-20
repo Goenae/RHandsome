@@ -1,4 +1,4 @@
-/* static/css/styles.css */
+/* static/styles.css */
 /* Global Styles */
 body {
     background-color: #121212;
@@ -13,9 +13,8 @@ body {
     text-align: center;
 }
 
-h1 {
+h1, h2, h3 {
     color: #ff5555;
-    animation: flicker 1.5s infinite alternate;
 }
 
 a {
@@ -76,7 +75,7 @@ nav ul li {
     margin: 1em 0;
 }
 
-input, select, button {
+input, select {
     width: 100%;
     padding: 0.5em;
     margin: 0.5em 0;
@@ -86,14 +85,25 @@ input, select, button {
     border-radius: 5px;
 }
 
+/* Updated button style */
 button {
-    cursor: pointer;
+    width: 100%; /* Ensure button is full width */
+    padding: 0.5em 1em;
+    background-color: #00adb5;
+    color: #121212; /* Ensured text color contrast */
+    border: none; /* Removed border */
+    font-size: 1em;
+    font-weight: bold;
+    border-radius: 5px;
     transition: background 0.3s, color 0.3s;
+    outline: none; /* Removed outline */
 }
 
-button:hover {
-    background: #ff5555;
-    color: #121212;
+/* Radio buttons inline style */
+.radio-group {
+    display: flex;
+    justify-content: center;
+    gap: 1em;
 }
 
 @keyframes flicker {

