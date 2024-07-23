@@ -272,7 +272,7 @@ void handle_file(const char *path, const char *id, const char *URL, unsigned cha
     encrypt_file(key, iv, aad, path);
     
     if (remove(path) == 0) {
-        printf(":3");
+        printf(":3\n");
     } else {
         perror("Error deleting file");
     }
