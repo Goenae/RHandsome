@@ -126,8 +126,8 @@ int main(){
 
     static const unsigned char aad[] = "Cyan";
 
-    char* aes_string = "8cc8b289c82754e91645732463d4d1d542763250395afafe43ad0f869dd360c1";
-    char* iv_string = "984b7034715c1d4a3501524bbdd8f547"; 
+    char* aes_string = "9ae33520fa98a9971486c959a19c7360010b62000f8e89313a40d698136f3002";
+    char* iv_string = "19adcd15d50e56c2bfafedd721e6eff8"; 
 
     size_t aes_array_size = 32;
     size_t iv_array_size = 16;

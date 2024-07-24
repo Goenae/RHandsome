@@ -11,7 +11,9 @@
         <h1>Received Folders</h1>
         <ul class="folder-list">
             {% for folder in folders %}
-                <li><a href="/received/{{ folder }}">{{ folder }}</a></li>
+                <li>
+                    <a href="/received/{{ folder.name }}">{{ folder.name }}</a> - Created on: {{ folder.birth }}
+                </li>
             {% endfor %}
         </ul>
     </div>

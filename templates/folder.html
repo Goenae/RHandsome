@@ -11,9 +11,14 @@
         <h1>{{ folder_name }}</h1>
         <ul class="file-list">
             {% for file in files %}
-                <li><a href="/download/{{ folder_name }}/{{ file }}">{{ file }}</a></li>
+                <li>
+                    {{ file.name }}
+                    <a href="/download/{{ folder_name }}/{{ file.name }}" class="button"><img src="{{url_for('static', filename='images/download.png')}}" width="20" height="20"></a>
+                    <a href="/preview/{{ folder_name }}/{{ file.name }}" class="button"><img src="{{url_for('static', filename='images/view.png')}}" width="20" height="20"></a>
+                </li>
             {% endfor %}
         </ul>
     </div>
 </body>
 </html>
+
