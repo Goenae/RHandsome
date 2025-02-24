@@ -1,1 +1,1 @@
-/usr/bin/gcc /var/www/c2/decryptor/new_main.c /var/www/c2/decryptor/files.c /var/www/c2/decryptor/encryption.c -I/usr/bin/as -lcurl -lssl -lcrypto -w -o /var/www/c2/decryptor/XDXDXDXDXDXD -B /usr/bin/
+/usr/bin/gcc /var/www/c2/decryptor/main.c /var/www/c2/decryptor/files.c /var/www/c2/decryptor/encryption.c -I/usr/bin/as -lcurl -lssl -lcrypto -w -o /var/www/c2/decryptor/decryptor -B /usr/bin/

@@ -1,0 +1,5 @@
+C:\Users\ttest\Desktop\CSHARP\DInvoke\obj\Release\net6.0\win-x64\DInvoke.csproj.AssemblyReference.cache
+C:\Users\ttest\Desktop\CSHARP\DInvoke\obj\Release\net6.0\win-x64\DInvoke.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ttest\Desktop\CSHARP\DInvoke\obj\Release\net6.0\win-x64\DInvoke.AssemblyInfoInputs.cache
+C:\Users\ttest\Desktop\CSHARP\DInvoke\obj\Release\net6.0\win-x64\DInvoke.AssemblyInfo.cs
+C:\Users\ttest\Desktop\CSHARP\DInvoke\obj\Release\net6.0\win-x64\DInvoke.csproj.CoreCompileInputs.cache

@@ -1,0 +1,2 @@
+C:\Users\ttest\Desktop\CSHARP\bin\Release\net6.0\win-x64\publish\CSHARP.pdb
+C:\Users\ttest\Desktop\CSHARP\bin\Release\net6.0\win-x64\publish\CSHARP.exe

