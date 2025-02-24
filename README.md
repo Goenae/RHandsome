@@ -1,10 +1,10 @@
-![RHandsome_logo](https://raw.githubusercontent.com/Goenae/RHandsome/refs/heads/master/screenshots/logo.PNG?token=GHSAT0AAAAAAC7NUKM6D7HAHJ7DTHKHHPKCZ55ANIA)
+![RHandsome_logo](https://github.com/Goenae/RHandsome/blob/master/screenshots/logo.PNG?raw=true)
 
 RHandsome is a basic ransomware project that consolidates multiple tools into one efficient and user-friendly Command & Control (C&C) interface.
 
-![Files](https://raw.githubusercontent.com/Goenae/RHandsome/refs/heads/master/screenshots/file_listing.png?token=GHSAT0AAAAAAC7NUKM7WPKSFHISRIXAB5IUZ55AO4Q)
+![Files](https://github.com/Goenae/RHandsome/blob/master/screenshots/file_listing.png?raw=true)
 
-![Payload_generation](https://raw.githubusercontent.com/Goenae/RHandsome/refs/heads/master/screenshots/payload_generation.png?token=GHSAT0AAAAAAC7NUKM7LRDTUEJZXFX7VHN4Z55AP5Q)
+![Payload_generation](https://github.com/Goenae/RHandsome/blob/master/screenshots/payload_generation.png?raw=true)
 
 ## Features
 - Agents written in C, API developed in Python.
